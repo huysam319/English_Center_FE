@@ -6,12 +6,9 @@ import 'package:english_center_fe/widgets/login/role_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:logger/logger.dart';
 
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
-
-final logger = Logger();
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
