@@ -1,0 +1,15 @@
+final List<String> menuList = [
+  "Trang chủ",
+  "Thông báo",
+  "Lớp của tôi",
+  "Bài tập tự chọn",
+  "Bài tập trên lớp",
+  "Danh sách đề thi",
+  "Lịch sử làm bài",
+  "Flashcards",
+  "Ticket",
+  "Bài tập",
+  "Đề thi",
+  "Ngân hàng câu hỏi",
+  "Quản lý lớp",
+];
