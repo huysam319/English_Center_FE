@@ -1,7 +1,10 @@
+import 'package:english_center_fe/services/auth_service.dart';
 import 'package:flutter/material.dart';
-import 'package:english_center_fe/helpers/responsiveness.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import 'package:english_center_fe/helpers/responsiveness.dart';
+import 'package:english_center_fe/services/api_service.dart';
 
 AppBar topNavigationBar(BuildContext context, GlobalKey<ScaffoldState> key, String title) => 
     AppBar(
@@ -74,20 +77,39 @@ AppBar topNavigationBar(BuildContext context, GlobalKey<ScaffoldState> key, Stri
             width: 16,
           ),
 
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30)
-            ),
-            child: Container(
-              padding: EdgeInsets.all(2),
-              margin: EdgeInsets.all(2),
-              child: CircleAvatar(
-                backgroundColor: Color(0xFFF7F8FC),
-                child: Icon(Icons.person_outline, color: Color(0xFF363740),),
+          PopupMenuButton<String>(
+            icon: Icon(Icons.person_outline, color: Color(0xFF363740)),
+            color: Colors.white,
+            position: PopupMenuPosition.under,
+            offset: Offset(0, 8),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'profile',
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                child: Text('Thông tin'),
               ),
-            ),
-          )
+              PopupMenuItem(
+                value: 'logout',
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                child: Text('Đăng xuất', style: TextStyle(color: Colors.red),),
+              ),
+            ],
+            onSelected: (value) async {
+              if (value == 'profile') {
+                // TODO: điều hướng tới trang thông tin người dùng nếu cần
+              } 
+              else { // value == 'logout'
+                await ApiService.post(
+                  '/identity/auth/logout',
+                  { 'token': authService.accessToken, },
+                );
+                authService.clearAuth();
+
+                if (!context.mounted) return;
+                context.go('/login');
+              }
+            },
+          ),
         ],
       ),
 

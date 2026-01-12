@@ -81,5 +81,29 @@ final GoRouter appRouter = GoRouter(
         child: MainPage(order: 9),
       ),
     ),
+    GoRoute(
+      path: '/exercises',
+      pageBuilder: (context, state) => MaterialPage(
+        child: MainPage(order: 10),
+      ),
+    ),
+    GoRoute(
+      path: '/tests',
+      pageBuilder: (context, state) => MaterialPage(
+        child: MainPage(order: 11),
+      ),
+    ),
+    GoRoute(
+      path: '/questions',
+      pageBuilder: (context, state) => MaterialPage(
+        child: MainPage(order: 12),
+      ),
+    ),
+    GoRoute(
+      path: '/classes',
+      pageBuilder: (context, state) => MaterialPage(
+        child: MainPage(order: 13),
+      ),
+    ),
   ],
 );

@@ -1,4 +1,4 @@
-final List<String> studentMenuList = [
+final List<String> menuList = [
   "Trang chủ",
   "Thông báo",
   "Lớp của tôi",
@@ -8,4 +8,8 @@ final List<String> studentMenuList = [
   "Lịch sử làm bài",
   "Flashcards",
   "Ticket",
+  "Bài tập",
+  "Đề thi",
+  "Ngân hàng câu hỏi",
+  "Quản lý lớp",
 ];

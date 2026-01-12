@@ -14,7 +14,7 @@ class LargeScreen extends StatelessWidget {
         Expanded(
           child: Container(
             color: Colors.white,
-            child: SideMenu(order: order),
+            child: SideMenu(order: order,),
           ),
         ),
         Expanded(

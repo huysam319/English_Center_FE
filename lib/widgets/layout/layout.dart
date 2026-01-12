@@ -16,11 +16,18 @@ class SiteLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       key: scaffoldKey,
-      appBar: topNavigationBar(context, scaffoldKey, studentMenuList[menuNo-1]),
+      appBar: topNavigationBar(
+        context, 
+        scaffoldKey, 
+        menuList[menuNo-1],
+      ),
       drawer: Drawer(
         child: SideMenu(order: menuNo),
       ),
-      body: ResponsiveWidget(largeScreen: LargeScreen(order: menuNo), smallScreen: SmallScreen(),),
+      body: ResponsiveWidget(
+        largeScreen: LargeScreen(order: menuNo), 
+        smallScreen: SmallScreen(),
+      ),
     );
   }
 }
