@@ -15,14 +15,14 @@ class ApiService {
   }
 
   static Future<http.Response> post(
-    String path,
-    Map<String, dynamic> body, {
+    String path, {
+    Map<String, dynamic>? body,
     String? token,
   }) {
     return http.post(
       Uri.parse('$baseUrl$path'),
       headers: _headers(token),
-      body: jsonEncode(body),
+      body: body == null? null: jsonEncode(body),
     );
   }
 

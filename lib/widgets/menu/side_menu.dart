@@ -14,7 +14,7 @@ class SideMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final decoded = JwtDecoder.decode(authService.accessToken ?? "");
-    if (decoded['scope'] == 'ROLE_STUDENT') {
+    if (decoded['scope'].contains('ROLE_STUDENT')) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Column(
@@ -125,7 +125,7 @@ class SideMenu extends StatelessWidget {
         ),
       );
     } 
-    else if (decoded['scope'] == 'ROLE_TEACHER') {
+    else if (decoded['scope'].contains('ROLE_TEACHER')) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Column(
@@ -183,6 +183,47 @@ class SideMenu extends StatelessWidget {
                 context.go("/classes");
               },
               isActive: (order == 13)? true: false,
+            ),
+          ],
+        ),
+      );
+    }
+    else if (decoded['scope'].contains('ROLE_ADMIN')) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Column(
+          children: [
+            SizedBox(height: 45,),
+
+            SingleMenuButton(
+              icon: Icons.home_outlined,
+              label: "Trang chủ",
+              func: () {
+                context.go("/");
+              },
+              isActive: (order == 1)? true: false,
+            ),
+
+            SizedBox(height: 5,),
+
+            SingleMenuButton(
+              icon: Icons.school_outlined,
+              label: "Quản lý giáo viên",
+              func: () {
+                context.go("/teacher");
+              },
+              isActive: (order == 14)? true: false,
+            ),
+
+            SizedBox(height: 5,),
+
+            SingleMenuButton(
+              icon: Icons.person_outlined,
+              label: "Quản lý học viên",
+              func: () {
+                context.go("/student");
+              },
+              isActive: (order == 15)? true: false,
             ),
           ],
         ),

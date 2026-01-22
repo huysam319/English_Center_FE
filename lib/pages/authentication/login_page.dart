@@ -1,15 +1,16 @@
 import 'dart:convert';
 
+import 'package:english_center_fe/constants/oauth_config.dart';
 import 'package:english_center_fe/controllers/text_input_controller.dart';
 import 'package:english_center_fe/widgets/login/password_field.dart';
-import 'package:english_center_fe/widgets/login/role_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import '../services/api_service.dart';
-import '../services/auth_service.dart';
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -65,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
 
       final response = await ApiService.post(
         '/identity/auth/token',
-        {
+        body: {
           'username': usernameController.text,
           'password': passwordController.text,
         },
@@ -85,8 +86,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       String token = data['result']['token'];
-      DateTime expiry = DateTime.now().add(Duration(seconds: 3600));
-      authService.setAuth(token, expiry);
+      authService.setAuth(token);
       
       if (!context.mounted) return;
       context.go('/');
@@ -138,10 +138,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
 
                     SizedBox(height: 24,),
-
-                    RoleSelector(),
-
-                    SizedBox(height: 24),
 
                     TextField(
                       controller: usernameController,
@@ -218,7 +214,15 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(
                       height: 36,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          // Login with Google
+                          final targetUrl = '${OauthConfig.authUri}?redirect_uri=${Uri.encodeComponent(
+                            OauthConfig.redirectUri
+                          )}&response_type=code&client_id=${OauthConfig.clientId}&scope=openid%20email%20profile';
+                          if (!await launchUrl(Uri.parse(targetUrl), webOnlyWindowName: '_self')) {
+                            throw Exception('Could not launch $targetUrl');
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
                           backgroundColor: Colors.white,

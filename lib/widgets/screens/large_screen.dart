@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 // import 'top_nav.dart';
 
 class LargeScreen extends StatelessWidget {
-  const LargeScreen({super.key, required this.order});
+  const LargeScreen({super.key, required this.order, required this.content});
   final int order;
+  final Widget content;
   
   @override
   Widget build(BuildContext context) {
@@ -19,9 +20,7 @@ class LargeScreen extends StatelessWidget {
         ),
         Expanded(
           flex: 5,
-          child: Container(
-            color: Color(0xFFF1F3F4),
-          ),
+          child: content,
         )
       ],
     );

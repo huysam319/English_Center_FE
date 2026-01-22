@@ -1,3 +1,5 @@
+
+import 'package:english_center_fe/widgets/layout/layout.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
@@ -8,8 +10,11 @@ class HomePage extends StatelessWidget {
     return Title(
       color: Colors.black,
       title: "Trang chủ",
-      child: Scaffold(
-        backgroundColor: Colors.yellow.shade100,
+      child: SiteLayout(
+        menuNo: 1,
+        content: Container(
+          color: Color(0xFFF1F3F4),
+        ),
       ),
     );
   }

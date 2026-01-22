@@ -96,12 +96,12 @@ AppBar topNavigationBar(BuildContext context, GlobalKey<ScaffoldState> key, Stri
             ],
             onSelected: (value) async {
               if (value == 'profile') {
-                // TODO: điều hướng tới trang thông tin người dùng nếu cần
+                context.go('/profile');
               } 
               else { // value == 'logout'
                 await ApiService.post(
                   '/identity/auth/logout',
-                  { 'token': authService.accessToken, },
+                  body: { 'token': authService.accessToken, },
                 );
                 authService.clearAuth();
 

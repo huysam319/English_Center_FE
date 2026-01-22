@@ -10,7 +10,9 @@ import 'top_nav.dart';
 class SiteLayout extends StatelessWidget {
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
   final int menuNo;
-  SiteLayout({super.key, required this.menuNo});
+  final Widget content;
+  final String? title;
+  SiteLayout({super.key, required this.menuNo, required this.content, this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -19,14 +21,14 @@ class SiteLayout extends StatelessWidget {
       appBar: topNavigationBar(
         context, 
         scaffoldKey, 
-        menuList[menuNo-1],
+        menuNo == 0? (title ?? ""): menuList[menuNo-1],
       ),
       drawer: Drawer(
         child: SideMenu(order: menuNo),
       ),
       body: ResponsiveWidget(
-        largeScreen: LargeScreen(order: menuNo), 
-        smallScreen: SmallScreen(),
+        largeScreen: LargeScreen(order: menuNo, content: content), 
+        smallScreen: SmallScreen(content: content),
       ),
     );
   }
