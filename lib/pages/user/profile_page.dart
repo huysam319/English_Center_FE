@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../exceptions/unauthorized_exception.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 
@@ -14,8 +15,6 @@ class ProfilePage extends StatefulWidget {
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
-
-class UnauthorizedException implements Exception {}
 
 Future<Map<String, dynamic>> _loadUserProfile() async {
   var response = await ApiService.get(
@@ -68,7 +67,7 @@ class _ProfilePageState extends State<ProfilePage> {
           future: _dataFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) {
               final err = snapshot.error;
@@ -76,14 +75,14 @@ class _ProfilePageState extends State<ProfilePage> {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) context.go('/login');
                 });
-                return const SizedBox.shrink();
+                return SizedBox.shrink();
               }
-              return const Center(child: Text('Lỗi tải thông tin người dùng'));
+              return Center(child: Text('Lỗi tải thông tin người dùng'));
             }
             final data = snapshot.data!;
             return Container(
-              color: const Color(0xFFF1F3F4),
-              padding: const EdgeInsets.all(50),
+              color: Color(0xFFF1F3F4),
+              padding: EdgeInsets.all(50),
               child: Column(
                 children: [
                   Row(

@@ -58,38 +58,38 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _handleLogin() async {
     setState(() {
-        _usernameError = usernameController.text.trim().isEmpty;
-        _passwordError = passwordController.text.trim().isEmpty;
-      });
+      _usernameError = usernameController.text.trim().isEmpty;
+      _passwordError = passwordController.text.trim().isEmpty;
+    });
 
-      if (_usernameError || _passwordError) return;
+    if (_usernameError || _passwordError) return;
 
-      final response = await ApiService.post(
-        '/identity/auth/token',
-        body: {
-          'username': usernameController.text,
-          'password': passwordController.text,
-        },
-      );
+    final response = await ApiService.post(
+      '/identity/auth/token',
+      body: {
+        'username': usernameController.text,
+        'password': passwordController.text,
+      },
+    );
 
-      final data = jsonDecode(response.body);
+    final data = jsonDecode(response.body);
 
-      if (data != null && data['code'] == 1009) {
-        usernameController.clear();
-        passwordController.clear();
+    if (data != null && data['code'] == 1009) {
+      usernameController.clear();
+      passwordController.clear();
 
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tên đăng nhập hoặc mật khẩu không đúng')),
-        );
-        return;
-      }
-
-      String token = data['result']['token'];
-      authService.setAuth(token);
-      
       if (!context.mounted) return;
-      context.go('/');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tên đăng nhập hoặc mật khẩu không đúng')),
+      );
+      return;
+    }
+
+    String token = data['result']['token'];
+    authService.setAuth(token);
+    
+    if (!context.mounted) return;
+    context.go('/');
   }
 
   @override
@@ -160,7 +160,12 @@ class _LoginPageState extends State<LoginPage> {
 
                     SizedBox(height: 16),
 
-                    PasswordField(showError: _passwordError),
+                    PasswordField(
+                      controller: passwordController, 
+                      showError: _passwordError,
+                      labelText: "Password",
+                      errorText: "Vui lòng nhập mật khẩu",
+                    ),
 
                     SizedBox(height: 16),
 

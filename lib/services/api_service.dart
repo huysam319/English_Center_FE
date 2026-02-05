@@ -26,6 +26,18 @@ class ApiService {
     );
   }
 
+  static Future<http.Response> put(
+    String path, {
+    Map<String, dynamic>? body,
+    String? token,
+  }) {
+    return http.put(
+      Uri.parse('$baseUrl$path'),
+      headers: _headers(token),
+      body: body == null? null: jsonEncode(body),
+    );
+  }
+
   static Map<String, String> _headers(String? token) {
     return {
       'Content-Type': 'application/json',

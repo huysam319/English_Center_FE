@@ -37,8 +37,17 @@ class _AuthenticationPageState extends State<AuthenticationPage> {
       final token = data['result']['token'];
       authService.setAuth(token);
 
-      if (!mounted) return;
-      context.go('/');
+      final myInfoResponse = await ApiService.get(
+        '/identity/users/my-info',
+        token: authService.accessToken,
+      );
+      final myInfoData = jsonDecode(myInfoResponse.body);
+      if (myInfoData['result']['noPassword'] == true) {
+        context.go('/update-account');
+      }
+      else {
+        context.go('/');
+      }
     }
   }
 

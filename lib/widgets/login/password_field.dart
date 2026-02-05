@@ -1,12 +1,12 @@
-import 'package:english_center_fe/controllers/text_input_controller.dart';
 import 'package:flutter/material.dart';
 
 class PasswordField extends StatefulWidget {
   final bool showError;
-  final String? errorText;
+  final TextEditingController controller;
+  final String labelText;
+  final String errorText;
 
-  const PasswordField({super.key, this.showError = false, this.errorText});
-
+  const PasswordField({super.key, this.showError = false, required this.controller, required this.labelText, required this.errorText});
   @override
   State<PasswordField> createState() => _PasswordFieldState();
 }
@@ -17,11 +17,11 @@ class _PasswordFieldState extends State<PasswordField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
-      controller: passwordController,
+      controller: widget.controller,
       obscureText: _obscure,
       decoration: InputDecoration(
-        labelText: "Password",
-        errorText: widget.showError ? (widget.errorText ?? 'Vui lòng nhập mật khẩu') : null,
+        labelText: widget.labelText,
+        errorText: widget.showError ? widget.errorText : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
         ),

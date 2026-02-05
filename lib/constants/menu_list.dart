@@ -12,6 +12,7 @@ final List<String> menuList = [
   "Đề thi",
   "Ngân hàng câu hỏi",
   "Quản lý lớp",
+  "Quản lý lớp học",
   "Quản lý giáo viên",
   "Quản lý học viên",
 ];

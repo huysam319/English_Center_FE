@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../pages/admin/create_class.dart';
+import '../pages/admin/create_student.dart';
+import '../pages/admin/create_teacher.dart';
 import '../pages/authentication/authentication_page.dart';
 import '../pages/authentication/login_page.dart';
-import '../pages/side_menu/admin/student_page.dart';
-import '../pages/side_menu/admin/teacher_page.dart';
+import '../pages/authentication/update_account_page.dart';
+import '../pages/side_menu/admin/class_management_page.dart';
+import '../pages/side_menu/admin/student_management_page.dart';
+import '../pages/side_menu/admin/teacher_management_page.dart';
 import '../pages/side_menu/home_page.dart';
 import '../pages/side_menu/students/class_exercise_page.dart';
 import '../pages/side_menu/students/class_page.dart';
@@ -48,6 +53,12 @@ final GoRouter appRouter = GoRouter(
       path: '/authenticate',
       pageBuilder: (context, state) => MaterialPage(
         child: AuthenticationPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/update-account',
+      pageBuilder: (context, state) => MaterialPage(
+        child: UpdateAccountPage(),
       ),
     ),
 
@@ -130,15 +141,40 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/teacher',
+      path: '/teacher-management',
       pageBuilder: (context, state) => MaterialPage(
-        child: TeacherPage(),
+        child: TeacherManagementPage(),
       ),
     ),
     GoRoute(
-      path: '/student',
+      path: '/student-management',
       pageBuilder: (context, state) => MaterialPage(
-        child: StudentPage(),
+        child: StudentManagementPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/class-management',
+      pageBuilder: (context, state) => MaterialPage(
+        child: ClassManagementPage(),
+      ),
+    ),
+    
+    GoRoute(
+      path: '/class-management/create',
+      pageBuilder: (context, state) => MaterialPage(
+        child: CreateClassPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/teacher-management/create',
+      pageBuilder: (context, state) => MaterialPage(
+        child: CreateTeacherPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/student-management/create',
+      pageBuilder: (context, state) => MaterialPage(
+        child: CreateStudentPage(),
       ),
     ),
     
