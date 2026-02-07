@@ -115,13 +115,6 @@ class _CreateClassPageState extends State<CreateClassPage> {
     super.dispose();
   }
 
-  String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final year = date.year.toString();
-    return '$day/$month/$year';
-  }
-
   Future<void> _pickDate({
     required TextEditingController controller,
     DateTime? initialDate,
@@ -135,12 +128,12 @@ class _CreateClassPageState extends State<CreateClassPage> {
       final selected = await showDatePicker(
         context: context,
         initialDate: initialDate ?? now,
-        firstDate: DateTime(2000),
+        firstDate: DateTime(1900),
         lastDate: DateTime(2100),
       );
 
       if (selected == null) return;
-      controller.text = _formatDate(selected);
+      controller.text = formatDate(selected);
     } finally {
       _isPickingDate = false;
       FocusManager.instance.primaryFocus?.unfocus();

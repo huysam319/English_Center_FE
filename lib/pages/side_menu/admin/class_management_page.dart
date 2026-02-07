@@ -187,11 +187,16 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                                             headingRowColor: WidgetStateProperty.all(
                                               Color(0xFF1E40AF),
                                             ),
-                                            // columnSpacing: 0,
+                                            headingRowHeight: 45,
+                                            dataRowMinHeight: 40,
+                                            dataRowMaxHeight: 40,
                                             columns: [
                                               DataColumn(
-                                                label: Text(
-                                                  "Tên lớp",
+                                                label: DefaultTextStyle.merge(
+                                                  child: Text(
+                                                    "Tên lớp",
+                                                    selectionColor: Color(0xFF60A5FA),
+                                                  ),
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.bold,
@@ -199,8 +204,11 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                                                 ),
                                               ),
                                               DataColumn(
-                                                label: Text(
-                                                  "Ngày bắt đầu",
+                                                label: DefaultTextStyle.merge(
+                                                  child: Text(
+                                                    "Ngày bắt đầu",
+                                                    selectionColor: Color(0xFF60A5FA),
+                                                  ),
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.bold,
@@ -208,8 +216,11 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                                                 ),
                                               ),
                                               DataColumn(
-                                                label: Text(
-                                                  "Ngày kết thúc",
+                                                label: DefaultTextStyle.merge(
+                                                  child: Text(
+                                                    "Ngày kết thúc",
+                                                    selectionColor: Color(0xFF60A5FA),
+                                                  ),
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.bold,
@@ -217,8 +228,11 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                                                 ),
                                               ),
                                               DataColumn(
-                                                label: Text(
-                                                  "Số lượng học viên",
+                                                label: DefaultTextStyle.merge(
+                                                  child: Text(
+                                                    "Số lượng học viên",
+                                                    selectionColor: Color(0xFF60A5FA),
+                                                  ),
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.bold,
@@ -231,10 +245,15 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                                               DataRow(
                                                 cells: [
                                                   DataCell(
-                                                    Text(
-                                                      _asCellText(classItem['name']),
-                                                      maxLines: 2,
-                                                      overflow: TextOverflow.ellipsis,
+                                                    InkWell(
+                                                      child: Text(
+                                                        _asCellText(classItem['name']),
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                      onTap: () {
+                                                        context.go('/class-management/${classItem['id']}');
+                                                      },
                                                     ),
                                                   ),
                                                   DataCell(

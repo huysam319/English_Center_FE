@@ -187,10 +187,16 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                             headingRowColor: WidgetStateProperty.all(
                                               Color(0xFF1E40AF),
                                             ),
+                                            headingRowHeight: 45,
+                                            dataRowMinHeight: 40,
+                                            dataRowMaxHeight: 40,
                                             columns: [
                                               DataColumn(
-                                                label: Text(
-                                                  "Tên đăng nhập",
+                                                label: DefaultTextStyle.merge(
+                                                  child: Text(
+                                                    "Tên đăng nhập",
+                                                    selectionColor: Color(0xFF60A5FA),
+                                                  ),
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.bold,
@@ -198,8 +204,11 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                                 ),
                                               ),
                                               DataColumn(
-                                                label: Text(
-                                                  "Họ và tên",
+                                                label: DefaultTextStyle.merge(
+                                                  child: Text(
+                                                    "Họ và tên",
+                                                    selectionColor: Color(0xFF60A5FA),
+                                                  ),
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.bold,
@@ -207,8 +216,11 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                                 ),
                                               ),
                                               DataColumn(
-                                                label: Text(
-                                                  "Ngày sinh",
+                                                label: DefaultTextStyle.merge(
+                                                  child: Text(
+                                                    "Ngày sinh",
+                                                    selectionColor: Color(0xFF60A5FA),
+                                                  ),
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.bold,
@@ -221,11 +233,16 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                                 DataRow(
                                                   cells: [
                                                     DataCell(
-                                                      Text(
-                                                        _asCellText(student['username']),
-                                                        maxLines: 2,
-                                                        overflow: TextOverflow.ellipsis,
-                                                        style: TextStyle(color: Colors.black),
+                                                      InkWell(
+                                                        child: Text(
+                                                          _asCellText(student['username']),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow.ellipsis,
+                                                          style: TextStyle(color: Colors.black),
+                                                        ),
+                                                        onTap: () {
+                                                          context.go('/student-management/${student['id']}');
+                                                        }
                                                       ),
                                                     ),
                                                     DataCell(

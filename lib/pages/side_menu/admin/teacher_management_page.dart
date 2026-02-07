@@ -187,10 +187,16 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                             headingRowColor: WidgetStateProperty.all(
                                               Color(0xFF1E40AF),
                                             ),
+                                            headingRowHeight: 45,
+                                            dataRowMinHeight: 40,
+                                            dataRowMaxHeight: 40,
                                             columns: [
                                               DataColumn(
-                                                label: Text(
-                                                  "Tên đăng nhập",
+                                                label: DefaultTextStyle.merge(
+                                                  child: Text(
+                                                    "Tên đăng nhập",
+                                                    selectionColor: Color(0xFF60A5FA),
+                                                  ),
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.bold,
@@ -198,8 +204,11 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                                 ),
                                               ),
                                               DataColumn(
-                                                label: Text(
-                                                  "Họ và tên",
+                                                label: DefaultTextStyle.merge(
+                                                  child: Text(
+                                                    "Họ và tên",
+                                                    selectionColor: Color(0xFF60A5FA),
+                                                  ),
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.bold,
@@ -207,8 +216,11 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                                 ),
                                               ),
                                               DataColumn(
-                                                label: Text(
-                                                  "Ngày sinh",
+                                                label: DefaultTextStyle.merge(
+                                                  child: Text(
+                                                    "Ngày sinh",
+                                                    selectionColor: Color(0xFF60A5FA),
+                                                  ),
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.bold,
@@ -221,10 +233,15 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                                 DataRow(
                                                   cells: [
                                                     DataCell(
-                                                      Text(
-                                                        _asCellText(teacher['username']),
-                                                        maxLines: 2,
-                                                        overflow: TextOverflow.ellipsis,
+                                                      InkWell(
+                                                        child: Text(
+                                                          _asCellText(teacher['username']),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                        onTap: () {
+                                                          context.go('/teacher-management/${teacher['id']}');
+                                                        },
                                                       ),
                                                     ),
                                                     DataCell(

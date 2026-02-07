@@ -7,3 +7,10 @@ String convertDateFormat(String date) {
   final dateTime = inputFormat.parse(date);
   return outputFormat.format(dateTime);
 }
+
+String formatDate(DateTime date) {
+  final day = date.day.toString().padLeft(2, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final year = date.year.toString();
+  return '$day/$month/$year';
+}

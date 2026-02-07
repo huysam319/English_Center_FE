@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../pages/admin/class_detail.dart';
 import '../pages/admin/create_class.dart';
 import '../pages/admin/create_student.dart';
 import '../pages/admin/create_teacher.dart';
+import '../pages/admin/student_detail.dart';
+import '../pages/admin/teacher_detail.dart';
 import '../pages/authentication/authentication_page.dart';
 import '../pages/authentication/login_page.dart';
 import '../pages/authentication/update_account_page.dart';
@@ -157,6 +160,33 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => MaterialPage(
         child: ClassManagementPage(),
       ),
+    ),
+    GoRoute(
+      path: '/teacher-management/:id',
+      pageBuilder: (context, state) {
+        final teacherId = state.pathParameters['id'];
+        return MaterialPage(
+          child: TeacherDetailPage(id: teacherId ?? ''),
+        );
+      }
+    ),
+    GoRoute(
+      path: '/student-management/:id',
+      pageBuilder: (context, state) {
+        final studentId = state.pathParameters['id'];
+        return MaterialPage(
+          child: StudentDetailPage(id: studentId ?? ''),
+        );
+      }
+    ),
+    GoRoute(
+      path: '/class-management/:id',
+      pageBuilder: (context, state) {
+        final classId = state.pathParameters['id'];
+        return MaterialPage(
+          child: ClassDetailPage(id: classId ?? ''),
+        );
+      }
     ),
     
     GoRoute(
