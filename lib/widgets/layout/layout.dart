@@ -16,6 +16,15 @@ class SiteLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+  //   final Widget scrolledContent = Container(
+  //     color: Colors.white,
+  //     child: ListView(
+  //       children: [
+  //         content,
+  //       ],
+  //     ),
+  //   );
+
     return Scaffold(
       key: scaffoldKey,
       appBar: topNavigationBar(

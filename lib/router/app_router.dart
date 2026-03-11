@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../pages/admin/class_detail.dart';
-import '../pages/admin/create_class.dart';
-import '../pages/admin/create_student.dart';
-import '../pages/admin/create_teacher.dart';
-import '../pages/admin/student_detail.dart';
-import '../pages/admin/teacher_detail.dart';
+import '../pages/admin/class_management/add_class_session_page.dart';
+import '../pages/admin/student_management/add_enrolment.dart';
+import '../pages/admin/class_management/class_detail_page.dart';
+import '../pages/admin/class_management/create_class_page.dart';
+import '../pages/admin/student_management/create_student_page.dart';
+import '../pages/admin/teacher_management/create_teacher_page.dart';
+import '../pages/admin/student_management/student_detail_page.dart';
+import '../pages/admin/teacher_management/teacher_detail_page.dart';
 import '../pages/authentication/authentication_page.dart';
 import '../pages/authentication/login_page.dart';
 import '../pages/authentication/update_account_page.dart';
@@ -25,6 +27,11 @@ import '../pages/side_menu/students/ticket_page.dart';
 import '../pages/side_menu/teachers/classes_page.dart';
 import '../pages/side_menu/teachers/exercises_page.dart';
 import '../pages/side_menu/teachers/questions_page.dart';
+import '../pages/students/test_item_page.dart';
+import '../pages/teachers/create_test_page.dart';
+import '../pages/teachers/teacher_class_attendances_page.dart';
+import '../pages/teachers/teacher_class_item_page.dart';
+import '../pages/teachers/teacher_class_students_page.dart';
 import '../pages/side_menu/teachers/tests_page.dart';
 import '../pages/user/profile_page.dart';
 import '../services/auth_service.dart';
@@ -108,6 +115,15 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/test/:testId',
+      pageBuilder: (context, state) { 
+        final testId = state.pathParameters['testId'];
+        return MaterialPage(
+          child: TestItemPage(testId: testId ?? '',),
+        );
+      }
+    ),
+    GoRoute(
       path: '/flashcard',
       pageBuilder: (context, state) => MaterialPage(
         child: FlashcardPage(),
@@ -132,6 +148,12 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/tests/create',
+      pageBuilder: (context, state) => MaterialPage(
+        child: CreateTestPage(),
+      ),
+    ),
+    GoRoute(
       path: '/questions',
       pageBuilder: (context, state) => MaterialPage(
         child: QuestionsPage(),
@@ -143,6 +165,34 @@ final GoRouter appRouter = GoRouter(
         child: ClassesPage(),
       ),
     ),
+    GoRoute(
+      path: '/classes/:classId',
+      pageBuilder: (context, state) {
+        final classId = state.pathParameters['classId'];
+        return MaterialPage(
+          child: TeacherClassItemPage(classId: classId ?? ''),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/classes/:classId/students',
+      pageBuilder: (context, state) {
+        final classId = state.pathParameters['classId'];
+        return MaterialPage(
+          child: TeacherClassStudentsPage(classId: classId ?? ''),
+        );
+      }
+    ),
+    GoRoute(
+      path: '/classes/:classId/attendances',
+      pageBuilder: (context, state) {
+        final classId = state.pathParameters['classId'];
+        return MaterialPage(
+          child: TeacherClassAttendancesPage(classId: classId ?? ''),
+        );
+      }
+    ),
+    
     GoRoute(
       path: '/teacher-management',
       pageBuilder: (context, state) => MaterialPage(
@@ -161,34 +211,7 @@ final GoRouter appRouter = GoRouter(
         child: ClassManagementPage(),
       ),
     ),
-    GoRoute(
-      path: '/teacher-management/:id',
-      pageBuilder: (context, state) {
-        final teacherId = state.pathParameters['id'];
-        return MaterialPage(
-          child: TeacherDetailPage(id: teacherId ?? ''),
-        );
-      }
-    ),
-    GoRoute(
-      path: '/student-management/:id',
-      pageBuilder: (context, state) {
-        final studentId = state.pathParameters['id'];
-        return MaterialPage(
-          child: StudentDetailPage(id: studentId ?? ''),
-        );
-      }
-    ),
-    GoRoute(
-      path: '/class-management/:id',
-      pageBuilder: (context, state) {
-        final classId = state.pathParameters['id'];
-        return MaterialPage(
-          child: ClassDetailPage(id: classId ?? ''),
-        );
-      }
-    ),
-    
+
     GoRoute(
       path: '/class-management/create',
       pageBuilder: (context, state) => MaterialPage(
@@ -206,6 +229,52 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => MaterialPage(
         child: CreateStudentPage(),
       ),
+    ),
+    
+    GoRoute(
+      path: '/teacher-management/:id',
+      pageBuilder: (context, state) {
+        final teacherId = state.pathParameters['id'];
+        return MaterialPage(
+          child: TeacherDetailPage(id: teacherId ?? ''),
+        );
+      }
+    ),
+    GoRoute(
+      path: '/student-management/:id',
+      pageBuilder: (context, state) {
+        final studentId = state.pathParameters['id'];
+        return MaterialPage(
+          child: StudentDetailPage(studentId: studentId ?? ''),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/student-management/:id/add-enrolment',
+      pageBuilder: (context, state) {
+        final studentId = state.pathParameters['id'];
+        return MaterialPage(
+          child: AddEnrolmentPage(studentId: studentId ?? ''),
+        );
+      }
+    ),
+    GoRoute(
+      path: '/class-management/:classId',
+      pageBuilder: (context, state) {
+        final classId = state.pathParameters['classId'];
+        return MaterialPage(
+          child: ClassDetailPage(classId: classId ?? ''),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/class-management/:classId/add-class-session',
+      pageBuilder: (context, state) {
+        final classId = state.pathParameters['classId'];
+        return MaterialPage(
+          child: AddClassSessionPage(classId: classId ?? ''),
+        );
+      }
     ),
     
     GoRoute(

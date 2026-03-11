@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:english_center_fe/constants/oauth_config.dart';
-import 'package:english_center_fe/controllers/text_input_controller.dart';
 import 'package:english_center_fe/widgets/login/password_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,6 +19,9 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
   bool _usernameError = false;
   bool _passwordError = false;
 

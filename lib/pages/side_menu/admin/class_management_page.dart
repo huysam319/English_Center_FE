@@ -2,11 +2,13 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:number_pagination/number_pagination.dart';
 
 import '../../../exceptions/unauthorized_exception.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
 import '../../../widgets/layout/layout.dart';
+// import '../../../widgets/table/pagination.dart';
 
 class ClassManagementPage extends StatefulWidget {
   const ClassManagementPage({super.key});
@@ -15,9 +17,9 @@ class ClassManagementPage extends StatefulWidget {
   State<ClassManagementPage> createState() => _ClassManagementPageState();
 }
 
-Future<Map<String, dynamic>> _loadAllClasses() async {
+Future<Map<String, dynamic>> _loadAllClasses(int page, int size) async {
   var response = await ApiService.get(
-    '/identity/courses/allcourses',
+    '/identity/courses/allcourses?page=$page&size=$size',
     token: authService.accessToken,
   );
 
@@ -33,7 +35,7 @@ Future<Map<String, dynamic>> _loadAllClasses() async {
       await authService.setAuth(newToken);
 
       response = await ApiService.get(
-        '/identity/courses/allcourses',
+        '/identity/courses/allcourses?page=$page&size=$size',
         token: authService.accessToken,
       );
     } else {
@@ -46,9 +48,11 @@ Future<Map<String, dynamic>> _loadAllClasses() async {
 }
 
 class _ClassManagementPageState extends State<ClassManagementPage> {
-  late final Future<Map<String, dynamic>> _dataFuture;
+  late Future<Map<String, dynamic>> _dataFuture;
   final ScrollController _verticalController = ScrollController();
   final ScrollController _horizontalController = ScrollController();
+
+  int _currentPage = 1;
 
   static String _asCellText(Object? value) {
     if (value == null) return '';
@@ -61,7 +65,7 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
   @override
   void initState() {
     super.initState();
-    _dataFuture = _loadAllClasses();
+    _dataFuture = _loadAllClasses(0, 10);
   }
 
   @override
@@ -137,7 +141,7 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                             child: Text('Lỗi tải thông tin lớp học'),
                           );
                         } else if (snapshot.hasData) {
-                          final result = snapshot.data!['result'];
+                          final result = snapshot.data!['result']['content'];
                           if (result is! List) {
                             return Center(
                               child: Text('Dữ liệu lớp học không hợp lệ'),
@@ -157,137 +161,169 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                             );
                           }
 
-                          return SizedBox(
-                            width: double.infinity,
-                            height: double.infinity,
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                return Scrollbar(
-                                  controller: _verticalController,
-                                  thumbVisibility: true,
-                                  interactive: true,
-                                  child: SingleChildScrollView(
+                          return Column(
+                            children: [
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return Scrollbar(
                                     controller: _verticalController,
-                                    padding: EdgeInsets.all(16),
-                                    child: Scrollbar(
-                                      controller: _horizontalController,
-                                      thumbVisibility: true,
-                                      interactive: true,
-                                      notificationPredicate: (notification) =>
-                                          notification.metrics.axis == Axis.horizontal,
-                                      scrollbarOrientation: ScrollbarOrientation.bottom,
-                                      child: SingleChildScrollView(
+                                    thumbVisibility: true,
+                                    interactive: true,
+                                    child: SingleChildScrollView(
+                                      controller: _verticalController,
+                                      padding: EdgeInsets.all(16),
+                                      child: Scrollbar(
                                         controller: _horizontalController,
-                                        scrollDirection: Axis.horizontal,
-                                        child: ConstrainedBox(
-                                          constraints: BoxConstraints(
-                                            minWidth: constraints.maxWidth - 32,
-                                          ),
-                                          child: DataTable(
-                                            headingRowColor: WidgetStateProperty.all(
-                                              Color(0xFF1E40AF),
+                                        thumbVisibility: true,
+                                        interactive: true,
+                                        notificationPredicate: (notification) =>
+                                            notification.metrics.axis == Axis.horizontal,
+                                        scrollbarOrientation: ScrollbarOrientation.bottom,
+                                        child: SingleChildScrollView(
+                                          controller: _horizontalController,
+                                          scrollDirection: Axis.horizontal,
+                                          child: ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              minWidth: constraints.maxWidth - 32,
                                             ),
-                                            headingRowHeight: 45,
-                                            dataRowMinHeight: 40,
-                                            dataRowMaxHeight: 40,
-                                            columns: [
-                                              DataColumn(
-                                                label: DefaultTextStyle.merge(
-                                                  child: Text(
-                                                    "Tên lớp",
-                                                    selectionColor: Color(0xFF60A5FA),
-                                                  ),
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
+                                            child: DataTable(
+                                              headingRowColor: WidgetStateProperty.all(
+                                                Color(0xFF1E40AF),
+                                              ),
+                                              headingRowHeight: 45,
+                                              dataRowMinHeight: 40,
+                                              dataRowMaxHeight: 40,
+                                              columns: [
+                                                DataColumn(
+                                                  label: DefaultTextStyle.merge(
+                                                    child: Text(
+                                                      "Tên lớp",
+                                                      selectionColor: Color(0xFF60A5FA),
+                                                    ),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                              DataColumn(
-                                                label: DefaultTextStyle.merge(
-                                                  child: Text(
-                                                    "Ngày bắt đầu",
-                                                    selectionColor: Color(0xFF60A5FA),
-                                                  ),
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                              DataColumn(
-                                                label: DefaultTextStyle.merge(
-                                                  child: Text(
-                                                    "Ngày kết thúc",
-                                                    selectionColor: Color(0xFF60A5FA),
-                                                  ),
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
+                                                DataColumn(
+                                                  label: DefaultTextStyle.merge(
+                                                    child: Text(
+                                                      "Ngày bắt đầu",
+                                                      selectionColor: Color(0xFF60A5FA),
+                                                    ),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                              DataColumn(
-                                                label: DefaultTextStyle.merge(
-                                                  child: Text(
-                                                    "Số lượng học viên",
-                                                    selectionColor: Color(0xFF60A5FA),
-                                                  ),
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
+                                                DataColumn(
+                                                  label: DefaultTextStyle.merge(
+                                                    child: Text(
+                                                      "Ngày kết thúc",
+                                                      selectionColor: Color(0xFF60A5FA),
+                                                    ),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                            rows: [
-                                              for (final classItem in classes)
-                                              DataRow(
-                                                cells: [
-                                                  DataCell(
-                                                    InkWell(
-                                                      child: Text(
-                                                        _asCellText(classItem['name']),
+                                                DataColumn(
+                                                  label: DefaultTextStyle.merge(
+                                                    child: Text(
+                                                      "Số lượng học viên",
+                                                      selectionColor: Color(0xFF60A5FA),
+                                                    ),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                              rows: [
+                                                for (final classItem in classes)
+                                                DataRow(
+                                                  cells: [
+                                                    DataCell(
+                                                      InkWell(
+                                                        child: Text(
+                                                          _asCellText(classItem['name']),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                        onTap: () {
+                                                          context.go('/class-management/${classItem['id']}');
+                                                        },
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        _asCellText(classItem['startDate']),
                                                         maxLines: 2,
                                                         overflow: TextOverflow.ellipsis,
                                                       ),
-                                                      onTap: () {
-                                                        context.go('/class-management/${classItem['id']}');
-                                                      },
                                                     ),
-                                                  ),
-                                                  DataCell(
-                                                    Text(
-                                                      _asCellText(classItem['startDate']),
-                                                      maxLines: 2,
-                                                      overflow: TextOverflow.ellipsis,
+                                                    DataCell(
+                                                      Text(
+                                                        _asCellText(classItem['endDate']),
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  DataCell(
-                                                    Text(
-                                                      _asCellText(classItem['endDate']),
-                                                      maxLines: 2,
-                                                      overflow: TextOverflow.ellipsis,
+                                                    DataCell(
+                                                      Text(
+                                                        _asCellText(classItem['numberOfStudents']),
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  DataCell(
-                                                    Text(
-                                                      _asCellText(classItem['numberOfStudents']),
-                                                      maxLines: 2,
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
+                                  );
+                                },
+                              ),
+
+                              SizedBox(height: 8),
+
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: NumberPagination(
+                                        onPageChanged: (value) => setState(() {
+                                          _dataFuture = _loadAllClasses(value - 1, 10);
+                                          _currentPage = value;
+                                        }),
+                                        totalPages: (snapshot.data!['result']['totalElements'] / snapshot.data!['result']['size'] as double).ceil(),
+                                        currentPage: _currentPage,
+                                        visiblePagesCount: 10,
+                                        buttonElevation: 0,
+                                        buttonRadius: 5,
+                                        controlButtonSize: Size(40, 40),
+                                        numberButtonSize: Size(40, 40),
+                                        selectedButtonColor: Color(0xFF1E40AF),
+                                      ),
+                                    ),
+
+                                    SizedBox(width: 5,),
+
+                                    Text(
+                                      '${(_currentPage - 1) * 10 + 1} - ${_currentPage * 10 > snapshot.data!['result']['totalElements'] ? snapshot.data!['result']['totalElements'] : _currentPage * 10} của ${snapshot.data!['result']['totalElements']}',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           );
                         } else {
                           return Center(child: Text('No data available'));

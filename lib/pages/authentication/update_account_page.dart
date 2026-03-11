@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../exceptions/unauthorized_exception.dart';
-import '../../helpers/convert_date_format.dart';
+import '../../helpers/convert_date_time_format.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/login/password_field.dart';

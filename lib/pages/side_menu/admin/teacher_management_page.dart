@@ -4,6 +4,7 @@ import 'package:english_center_fe/services/api_service.dart';
 import 'package:english_center_fe/widgets/layout/layout.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:number_pagination/number_pagination.dart';
 
 import '../../../exceptions/unauthorized_exception.dart';
 import '../../../services/auth_service.dart';
@@ -15,9 +16,9 @@ class TeacherManagementPage extends StatefulWidget {
   State<TeacherManagementPage> createState() => _TeacherManagementPageState();
 }
 
-Future<Map<String, dynamic>> _loadAllTeachers() async {
+Future<Map<String, dynamic>> _loadAllTeachers(int page, int size) async {
   var response = await ApiService.get(
-    '/identity/users/teachers',
+    '/identity/users/teachers?page=$page&size=$size',
     token: authService.accessToken,
   );
 
@@ -33,7 +34,7 @@ Future<Map<String, dynamic>> _loadAllTeachers() async {
       await authService.setAuth(newToken);
 
       response = await ApiService.get(
-        '/identity/users/teachers',
+        '/identity/users/teachers?page=$page&size=$size',
         token: authService.accessToken,
       );
     } else {
@@ -50,6 +51,8 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
   final ScrollController _verticalController = ScrollController();
   final ScrollController _horizontalController = ScrollController();
 
+  int _currentPage = 1;
+
   static String _asCellText(Object? value) {
     if (value == null) return '';
     if (value is String) return value;
@@ -61,7 +64,7 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
   @override
   void initState() {
     super.initState();
-    _dataFuture = _loadAllTeachers();
+    _dataFuture = _loadAllTeachers(0, 10);
   }
 
   @override
@@ -137,7 +140,7 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                             child: Text('Lỗi tải thông tin giáo viên'),
                           );
                         } else if (snapshot.hasData) {
-                          final result = snapshot.data!['result'];
+                          final result = snapshot.data!['result']['content'];
                           if (result is! List) {
                             return Center(
                               child: Text('Dữ liệu giáo viên không hợp lệ'),
@@ -157,118 +160,150 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                             );
                           }
 
-                          return SizedBox(
-                            width: double.infinity,
-                            height: double.infinity,
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                return Scrollbar(
-                                  controller: _verticalController,
-                                  thumbVisibility: true,
-                                  interactive: true,
-                                  child: SingleChildScrollView(
+                          return Column(
+                            children: [
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return Scrollbar(
                                     controller: _verticalController,
-                                    padding: EdgeInsets.all(16),
-                                    child: Scrollbar(
-                                      controller: _horizontalController,
-                                      thumbVisibility: true,
-                                      interactive: true,
-                                      notificationPredicate: (notification) =>
-                                          notification.metrics.axis == Axis.horizontal,
-                                      scrollbarOrientation: ScrollbarOrientation.bottom,
-                                      child: SingleChildScrollView(
+                                    thumbVisibility: true,
+                                    interactive: true,
+                                    child: SingleChildScrollView(
+                                      controller: _verticalController,
+                                      padding: EdgeInsets.all(16),
+                                      child: Scrollbar(
                                         controller: _horizontalController,
-                                        scrollDirection: Axis.horizontal,
-                                        child: ConstrainedBox(
-                                          constraints: BoxConstraints(
-                                            minWidth: constraints.maxWidth - 32,
-                                          ),
-                                          child: DataTable(
-                                            headingRowColor: WidgetStateProperty.all(
-                                              Color(0xFF1E40AF),
+                                        thumbVisibility: true,
+                                        interactive: true,
+                                        notificationPredicate: (notification) =>
+                                            notification.metrics.axis == Axis.horizontal,
+                                        scrollbarOrientation: ScrollbarOrientation.bottom,
+                                        child: SingleChildScrollView(
+                                          controller: _horizontalController,
+                                          scrollDirection: Axis.horizontal,
+                                          child: ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              minWidth: constraints.maxWidth - 32,
                                             ),
-                                            headingRowHeight: 45,
-                                            dataRowMinHeight: 40,
-                                            dataRowMaxHeight: 40,
-                                            columns: [
-                                              DataColumn(
-                                                label: DefaultTextStyle.merge(
-                                                  child: Text(
-                                                    "Tên đăng nhập",
-                                                    selectionColor: Color(0xFF60A5FA),
-                                                  ),
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
+                                            child: DataTable(
+                                              headingRowColor: WidgetStateProperty.all(
+                                                Color(0xFF1E40AF),
+                                              ),
+                                              headingRowHeight: 45,
+                                              dataRowMinHeight: 40,
+                                              dataRowMaxHeight: 40,
+                                              columns: [
+                                                DataColumn(
+                                                  label: DefaultTextStyle.merge(
+                                                    child: Text(
+                                                      "Tên đăng nhập",
+                                                      selectionColor: Color(0xFF60A5FA),
+                                                    ),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                              DataColumn(
-                                                label: DefaultTextStyle.merge(
-                                                  child: Text(
-                                                    "Họ và tên",
-                                                    selectionColor: Color(0xFF60A5FA),
-                                                  ),
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                              DataColumn(
-                                                label: DefaultTextStyle.merge(
-                                                  child: Text(
-                                                    "Ngày sinh",
-                                                    selectionColor: Color(0xFF60A5FA),
-                                                  ),
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
+                                                DataColumn(
+                                                  label: DefaultTextStyle.merge(
+                                                    child: Text(
+                                                      "Họ và tên",
+                                                      selectionColor: Color(0xFF60A5FA),
+                                                    ),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                            rows: [
-                                              for (final teacher in teachers)
-                                                DataRow(
-                                                  cells: [
-                                                    DataCell(
-                                                      InkWell(
-                                                        child: Text(
-                                                          _asCellText(teacher['username']),
+                                                DataColumn(
+                                                  label: DefaultTextStyle.merge(
+                                                    child: Text(
+                                                      "Ngày sinh",
+                                                      selectionColor: Color(0xFF60A5FA),
+                                                    ),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                              rows: [
+                                                for (final teacher in teachers)
+                                                  DataRow(
+                                                    cells: [
+                                                      DataCell(
+                                                        InkWell(
+                                                          child: Text(
+                                                            _asCellText(teacher['username']),
+                                                            maxLines: 2,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                          onTap: () {
+                                                            context.go('/teacher-management/${teacher['id']}');
+                                                          },
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          _asCellText('${teacher['lastName']} ${teacher['firstName']}'),
                                                           maxLines: 2,
                                                           overflow: TextOverflow.ellipsis,
                                                         ),
-                                                        onTap: () {
-                                                          context.go('/teacher-management/${teacher['id']}');
-                                                        },
                                                       ),
-                                                    ),
-                                                    DataCell(
-                                                      Text(
-                                                        _asCellText('${teacher['lastName']} ${teacher['firstName']}'),
-                                                        maxLines: 2,
-                                                        overflow: TextOverflow.ellipsis,
+                                                      DataCell(
+                                                        Text(
+                                                          _asCellText(teacher['dob']),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
                                                       ),
-                                                    ),
-                                                    DataCell(
-                                                      Text(
-                                                        _asCellText(teacher['dob']),
-                                                        maxLines: 2,
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                            ],
+                                                    ],
+                                                  ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
+                                  );
+                                },
+                              ),
+
+                              SizedBox(height: 8),
+
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: NumberPagination(
+                                        onPageChanged: (value) => setState(() {
+                                          _dataFuture = _loadAllTeachers(value - 1, 10);
+                                          _currentPage = value;
+                                        }),
+                                        totalPages: (snapshot.data!['result']['totalElements'] / snapshot.data!['result']['size'] as double).ceil(),
+                                        currentPage: _currentPage,
+                                        visiblePagesCount: 10,
+                                        buttonElevation: 0,
+                                        buttonRadius: 5,
+                                        controlButtonSize: Size(40, 40),
+                                        numberButtonSize: Size(40, 40),
+                                        selectedButtonColor: Color(0xFF1E40AF),
+                                      ),
+                                    ),
+
+                                    SizedBox(width: 5,),
+
+                                    Text(
+                                      '${(_currentPage - 1) * 10 + 1} - ${_currentPage * 10 > snapshot.data!['result']['totalElements'] ? snapshot.data!['result']['totalElements'] : _currentPage * 10} của ${snapshot.data!['result']['totalElements']}',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           );
                         } else {
                           return Center(child: Text('No data available'));
