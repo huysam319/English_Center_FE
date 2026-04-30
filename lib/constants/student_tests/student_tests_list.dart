@@ -3,9 +3,32 @@ Map<String, dynamic> testsList = {
   "result": {
     "content": [
       {
+        "id": "0a28d2ee-3718-4ec4-9073-aa08f581800d",
+        "name": "Cambridge IELTS 16 Writing Test 1",
+        "skill": "Writing",
+        "parts": [
+          {
+            "assessmentId": "0a28d2ee-3718-4ec4-9073-aa08f581800d",
+            "partNumber": 1,
+            "text": """<p><strong>The charts below show the changes in ownership of electrical appliances and amount of time doing housework and households in one country between 1920 and 2019.</strong><br><br>
+Summarise the information by selecting and reporting the main features, and make comparisons where relevant.<br><br>
+Write at least 150 words.</p>""",
+            "questionGroups": [],
+          },
+          {
+            "assessmentId": "0a28d2ee-3718-4ec4-9073-aa08f581800d",
+            "partNumber": 2,
+            "text": """<p><strong>In some countries, more people are becoming interested in finding out about the history of the house or building they live in.</strong><br><br>
+What are the reasons for this? How can people research this question?<br><br>
+Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p>""",
+            "questionGroups": [],
+          },
+        ],
+      },
+      {
         "id": "1",
         "name": "Cambridge IELTS 16 Listening Test 1",
-        "type": "Listening",
+        "skill": "Listening",
         "parts": [
           {
             "id": "Cam16L1P1",
@@ -34,7 +57,7 @@ Map<String, dynamic> testsList = {
       {
         "id": "2",
         "name": "Cambridge IELTS 16 Listening Test 2",
-        "type": "Listening",
+        "skill": "Listening",
         "parts": [
           {
             "id": "Cam16L2P1",
@@ -61,43 +84,43 @@ Map<String, dynamic> testsList = {
       {
         "id": "3",
         "name": "Cambridge IELTS 16 Listening Test 3",
-        "type": "Listening",
+        "skill": "Listening",
         "parts": [],
       },
       {
         "id": "4",
         "name": "Cambridge IELTS 16 Listening Test 4",
-        "type": "Listening",
+        "skill": "Listening",
         "parts": [],
       },
       {
         "id": "5",
         "name": "Cambridge IELTS 17 Listening Test 1",
-        "type": "Listening",
+        "skill": "Listening",
         "parts": [],
       },
       {
         "id": "6",
         "name": "Cambridge IELTS 17 Listening Test 2",
-        "type": "Listening",
+        "skill": "Listening",
         "parts": [],
       },
       {
         "id": "7",
         "name": "Cambridge IELTS 17 Listening Test 3",
-        "type": "Listening",
+        "skill": "Listening",
         "parts": [],
       },
       {
         "id": "8",
         "name": "Cambridge IELTS 17 Listening Test 4",
-        "type": "Listening",
+        "skill": "Listening",
         "parts": [],
       },
       {
         "id": "9",
         "name": "Cambridge IELTS 16 Reading Test 1",
-        "type": "Reading",
+        "skill": "Reading",
         "parts": [
           {
             "id": "Cam16R1P1",
@@ -213,43 +236,43 @@ importantly, the disappearance of an intelligent, majestic animal.""",
       {
         "id": "10",
         "name": "Cambridge IELTS 16 Reading Test 2",
-        "type": "Reading",
+        "skill": "Reading",
         "parts": [],
       },
       {
         "id": "11",
         "name": "Cambridge IELTS 16 Reading Test 3",
-        "type": "Reading",
+        "skill": "Reading",
         "parts": [],
       },
       {
         "id": "12",
         "name": "Cambridge IELTS 16 Reading Test 4",
-        "type": "Reading",
+        "skill": "Reading",
         "parts": [],
       },
       {
         "id": "13",
         "name": "Cambridge IELTS 17 Reading Test 1",
-        "type": "Reading",
+        "skill": "Reading",
         "parts": [],
       },
       {
         "id": "14",
         "name": "Cambridge IELTS 17 Reading Test 2",
-        "type": "Reading",
+        "skill": "Reading",
         "parts": [],
       },
       {
         "id": "15",
         "name": "Cambridge IELTS 17 Reading Test 3",
-        "type": "Reading",
+        "skill": "Reading",
         "parts": [],
       },
       {
         "id": "16",
         "name": "Cambridge IELTS 17 Reading Test 4",
-        "type": "Reading",
+        "skill": "Reading",
         "parts": [],
       },
     ]

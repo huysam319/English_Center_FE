@@ -98,12 +98,14 @@ class _DropzoneState extends State<Dropzone> {
     final mime = await controller.getFileMIME(event);
     final bytes = await controller.getFileSize(event);
     final url = await controller.createFileUrl(event);
+    final content = controller.getFileStream(event);
 
     final droppedFile = DroppedFile(
       name: name,
       mime: mime,
       bytes: bytes,
       url: url,
+      content: content,
     );
 
     widget.onDroppedFile(droppedFile);

@@ -57,7 +57,7 @@ class _TestHistoryPageState extends State<TestHistoryPage> {
         menuNo: 7,
         content: Container(
           color: Colors.white,
-          child: Column(
+          child: ListView(
             children: [
               // AudioPlayerWidget(url: 'assets/audios/music1.mp3'),
 

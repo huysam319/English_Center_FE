@@ -5,13 +5,13 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'question_type_model.dart';
 
 class PartModel {
-  final int id;
+  int id;
   final TextEditingController classController;
   final QuillController textController = QuillController.basic();
   final VoidCallback refresh;
   final List<QuestionTypeModel> questionTypes = [];
   bool classError;
-  DroppedFile? audioFile;
+  DroppedFile? file;
 
   PartModel({required this.id, required this.classController, required this.refresh, this.classError = false});
 

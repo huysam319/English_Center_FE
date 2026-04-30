@@ -44,7 +44,7 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
     _classDataFuture = _loadClassInfo(widget.classId);
   }
 
-    Future<Map<String, dynamic>> _loadClassInfo(String id) async {
+  Future<Map<String, dynamic>> _loadClassInfo(String id) async {
     var response = await ApiService.get(
       '/identity/courses/$id',
       token: authService.accessToken,
@@ -593,6 +593,27 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                               ),
                             ),
                             child: Text("Học viên"),
+                          ),
+                          SizedBox(width: 2,),
+                          ElevatedButton(
+                            onPressed: () {
+                              context.go('/classes/${widget.classId}/exercises');
+                            }, 
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
+                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              overlayColor: WidgetStateProperty.all(
+                                Colors.transparent,
+                              ),
+                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              elevation: WidgetStateProperty.all(0),
+                              shape: WidgetStateProperty.all(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ),
+                            child: Text("Bài tập"),
                           ),
                           SizedBox(width: 2,),
                           ElevatedButton(

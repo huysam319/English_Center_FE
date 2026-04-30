@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../constants/student_tests/student_tests_list.dart';
+// import '../../../constants/student_tests/student_tests_list.dart';
 import '../../../exceptions/unauthorized_exception.dart';
+import '../../../services/api_service.dart';
+import '../../../services/auth_service.dart';
 import '../../../widgets/layout/layout.dart';
 
 class TestPage extends StatefulWidget {
@@ -13,8 +17,33 @@ class TestPage extends StatefulWidget {
 }
 
 Future<Map<String, dynamic>> _loadTests() async {
-  var response = testsList;
-  return response;
+  var response = await ApiService.get(
+    '/identity/assessments/my-assessments',
+    token: authService.accessToken,
+  );
+  
+  if (response.statusCode == 401) {
+      var refreshResponse = await ApiService.post(
+        '/identity/auth/refresh',
+        body: {'token': authService.accessToken},
+      );
+
+      var refreshData = jsonDecode(refreshResponse.body);
+      if (refreshData['code'] == 1000) {
+        final newToken = refreshData['result']['token'];
+        await authService.setAuth(newToken);
+
+        response = await ApiService.get(
+          '/identity/assessments/my-assessments',
+          token: authService.accessToken,
+        );
+      } else {
+        await authService.clearAuth();
+        throw UnauthorizedException();
+      }
+    }
+
+    return jsonDecode(response.body);
 }
 
 class _TestPageState extends State<TestPage> {
@@ -57,7 +86,7 @@ class _TestPageState extends State<TestPage> {
                           child: Text('Lỗi tải thông tin đề thi'),
                         );
                       } else if (snapshot.hasData) {
-                        final result = snapshot.data!['result']['content'];
+                        final result = snapshot.data!['result'];
                         if (result is! List) {
                           return Center(
                             child: Text('Dữ liệu đề thi không hợp lệ'),

@@ -1,0 +1,92 @@
+{
+    "title": "",
+    "parts": [
+        {
+            "number": 1,
+            "questionQuantity": 10,
+            "text": {
+                "content": "passage..."
+            },
+            "multipleChoiceTypes": [
+                {
+                    "prompt": "...",
+                    "multipleChoiceQuestions": [
+                        {
+                            "number": 1,
+                            "content": "...",
+                            "choices": [
+                                {
+                                    "order": 1,
+                                    "content": "...",
+                                    "isCorrect": false
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "completionTypes": [
+                {
+                    "prompt": "",
+                    "completionQuestions": [
+                        {
+                            "number": 4,
+                            "content": "...",
+                            "answer": "..."
+                        }
+                    ],
+                    "completionMaterial": {
+                        "link": "..."
+                    }
+                }
+            ],
+            "labelingTypes": [
+                {
+                    "prompt": "",
+                    "labelingOptions": [
+                        {
+                            "order": 1,
+                            "content": "..."
+                        },
+                        {
+                            "order": 2,
+                            "content": "..."
+                        }
+                    ],
+                    "labelingQuestions": [
+                        {
+                            "number": 8,
+                            "content": "...",
+                            "answer": "..."
+                        }
+                    ],
+                    "labelingMaterial": {
+                        "link": "..."
+                    }
+                }
+            ],
+            "matchingTypes": [
+                {
+                    "prompt": "",
+                    "matchingOptions": [
+                        {
+                            "order": 1,
+                            "content": "..."
+                        },
+                        {
+                            "order": 2,
+                            "content": "..."
+                        }
+                    ],
+                    "matchingQuestions": [
+                        {
+                            "number": 10,
+                            "content": "...",
+                            "answer": "..."
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

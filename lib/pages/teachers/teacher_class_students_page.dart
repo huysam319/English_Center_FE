@@ -500,6 +500,27 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
                           SizedBox(width: 2,),
                           ElevatedButton(
                             onPressed: () {
+                              context.go('/classes/${widget.classId}/exercises');
+                            }, 
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
+                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              overlayColor: WidgetStateProperty.all(
+                                Colors.transparent,
+                              ),
+                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              elevation: WidgetStateProperty.all(0),
+                              shape: WidgetStateProperty.all(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ),
+                            child: Text("Bài tập"),
+                          ),
+                          SizedBox(width: 2,),
+                          ElevatedButton(
+                            onPressed: () {
                               context.go('/classes/${widget.classId}/attendances');
                             }, 
                             style: ButtonStyle(

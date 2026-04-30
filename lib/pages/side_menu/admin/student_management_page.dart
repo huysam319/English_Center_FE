@@ -47,7 +47,7 @@ Future<Map<String, dynamic>> _loadAllStudents(int page, int size) async {
 }
 
 class _StudentManagementPageState extends State<StudentManagementPage> {
-  late final Future<Map<String, dynamic>> _dataFuture;
+  late Future<Map<String, dynamic>> _dataFuture;
   final ScrollController _verticalController = ScrollController();
   final ScrollController _horizontalController = ScrollController();
 
@@ -140,12 +140,18 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                             child: Text('Lỗi tải thông tin học viên'),
                           );
                         } else if (snapshot.hasData) {
-                          final result = snapshot.data!['result']['content'];
+                          final resultMap = snapshot.data!['result'] as Map<String, dynamic>;
+                          final result = resultMap['content'];
                           if (result is! List) {
                             return Center(
                               child: Text('Dữ liệu học viên không hợp lệ'),
                             );
                           }
+
+                          final totalElements = (resultMap['totalElements'] as num?)?.toInt() ?? 0;
+                          final pageSize = (resultMap['size'] as num?)?.toInt() ?? 10;
+                          final totalPages =
+                              totalElements == 0 ? 1 : ((totalElements + pageSize - 1) ~/ pageSize);
 
                           final students = result
                               .whereType<Map>()
@@ -287,7 +293,7 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                           _dataFuture = _loadAllStudents(value - 1, 10);
                                           _currentPage = value;
                                         }),
-                                        totalPages: (snapshot.data!['result']['totalElements'] / snapshot.data!['result']['size'] as double).ceil(),
+                                        totalPages: totalPages,
                                         currentPage: _currentPage,
                                         visiblePagesCount: 10,
                                         buttonElevation: 0,
@@ -301,7 +307,7 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                     SizedBox(width: 5,),
 
                                     Text(
-                                      '${(_currentPage - 1) * 10 + 1} - ${_currentPage * 10 > snapshot.data!['result']['totalElements'] ? snapshot.data!['result']['totalElements'] : _currentPage * 10} của ${snapshot.data!['result']['totalElements']}',
+                                      '${(_currentPage - 1) * pageSize + 1} - ${_currentPage * pageSize > totalElements ? totalElements : _currentPage * pageSize} của $totalElements',
                                     ),
                                   ],
                                 ),

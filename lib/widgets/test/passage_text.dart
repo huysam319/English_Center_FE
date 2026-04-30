@@ -4,8 +4,13 @@ import 'package:flutter/material.dart';
 
 class PassageText extends StatefulWidget {
   final String text;
+  final String? highlightStorageKey;
 
-  const PassageText({super.key, required this.text});
+  const PassageText({
+    super.key,
+    required this.text,
+    this.highlightStorageKey,
+  });
 
   @override
   State<PassageText> createState() => _PassageTextState();
@@ -26,10 +31,29 @@ class _PassageTextState extends State<PassageText> {
   void didUpdateWidget(covariant PassageText oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.text != widget.text) {
+    if (oldWidget.text != widget.text ||
+        oldWidget.highlightStorageKey != widget.highlightStorageKey) {
       _createView();
       setState(() {});
     }
+  }
+
+  String _getInitialHtml() {
+    final storageKey = widget.highlightStorageKey;
+    if (storageKey == null || storageKey.isEmpty) {
+      return widget.text;
+    }
+
+    return html.window.localStorage[storageKey] ?? widget.text;
+  }
+
+  void _persistHighlightHtml() {
+    final storageKey = widget.highlightStorageKey;
+    if (storageKey == null || storageKey.isEmpty) {
+      return;
+    }
+
+    html.window.localStorage[storageKey] = _div.innerHtml ?? widget.text;
   }
 
   void _createView() {
@@ -44,7 +68,9 @@ class _PassageTextState extends State<PassageText> {
       ..style.height = '100%'
       ..style.overflowY = 'auto'
       ..style.textAlign = 'justify'
-      ..innerHtml = widget.text;
+      ..innerHtml = _getInitialHtml();
+
+    _applyHighlightStyles();
 
     ui.platformViewRegistry.registerViewFactory(
       _viewType,
@@ -52,6 +78,14 @@ class _PassageTextState extends State<PassageText> {
     );
 
     _div.onContextMenu.listen(_handleRightClick);
+  }
+
+  void _applyHighlightStyles() {
+    final highlightedElements = _div.querySelectorAll('.custom-highlight');
+
+    for (final element in highlightedElements) {
+      element.style.backgroundColor = 'yellow';
+    }
   }
 
   void _handleRightClick(html.MouseEvent event) async {
@@ -126,6 +160,7 @@ class _PassageTextState extends State<PassageText> {
     }
 
     _savedRange = null;
+    _persistHighlightHtml();
   }
 
   void _removeHighlight(html.Element span) {
@@ -138,6 +173,7 @@ class _PassageTextState extends State<PassageText> {
     }
 
     span.remove();
+    _persistHighlightHtml();
   }
 
   @override
@@ -151,6 +187,7 @@ class _PassageTextState extends State<PassageText> {
       height: double.infinity,
       width: double.infinity,
       child: HtmlElementView(
+        key: ValueKey(_viewType),
         viewType: _viewType,
       ),
     );

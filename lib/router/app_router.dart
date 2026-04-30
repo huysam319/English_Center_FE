@@ -27,9 +27,11 @@ import '../pages/side_menu/students/ticket_page.dart';
 import '../pages/side_menu/teachers/classes_page.dart';
 import '../pages/side_menu/teachers/exercises_page.dart';
 import '../pages/side_menu/teachers/questions_page.dart';
+import '../pages/students/flashcard_set_page.dart';
 import '../pages/students/test_item_page.dart';
 import '../pages/teachers/create_test_page.dart';
 import '../pages/teachers/teacher_class_attendances_page.dart';
+import '../pages/teachers/teacher_class_exercises_page.dart';
 import '../pages/teachers/teacher_class_item_page.dart';
 import '../pages/teachers/teacher_class_students_page.dart';
 import '../pages/side_menu/teachers/tests_page.dart';
@@ -130,6 +132,15 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/flashcard/:flashcardSetId',
+      pageBuilder: (context, state) {
+        final flashcardSetId = state.pathParameters['flashcardSetId'];
+        return MaterialPage(
+          child: FlashcardSetPage(flashcardSetId: flashcardSetId ?? ''),
+        );
+      }
+    ),
+    GoRoute(
       path: '/ticket',
       pageBuilder: (context, state) => MaterialPage(
         child: TicketPage(),
@@ -180,6 +191,15 @@ final GoRouter appRouter = GoRouter(
         final classId = state.pathParameters['classId'];
         return MaterialPage(
           child: TeacherClassStudentsPage(classId: classId ?? ''),
+        );
+      }
+    ),
+    GoRoute(
+      path: '/classes/:classId/exercises',
+      pageBuilder: (context, state) {
+        final classId = state.pathParameters['classId'];
+        return MaterialPage(
+          child: TeacherClassExercisesPage(classId: classId ?? ''),
         );
       }
     ),

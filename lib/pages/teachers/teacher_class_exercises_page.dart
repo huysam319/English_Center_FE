@@ -8,58 +8,58 @@ import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/layout/layout.dart';
 
-class TeacherClassItemPage extends StatefulWidget {
+class TeacherClassExercisesPage extends StatefulWidget {
+  const TeacherClassExercisesPage({super.key, required this.classId});
+
   final String classId;
 
-  const TeacherClassItemPage({super.key, required this.classId});
-
   @override
-  State<TeacherClassItemPage> createState() => _TeacherClassItemPageState();
+  State<TeacherClassExercisesPage> createState() => _TeacherClassExercisesPageState();
 }
 
-Future<Map<String, dynamic>> _loadClassInfo(String id) async {
-  var response = await ApiService.get(
-    '/identity/courses/$id',
-    token: authService.accessToken,
-  );
-  
-  if (response.statusCode == 401) {
-    var refreshResponse = await ApiService.post(
-      '/identity/auth/refresh',
-      body: {'token': authService.accessToken},
-    );
-
-    var refreshData = jsonDecode(refreshResponse.body);
-    if (refreshData['code'] == 1000) {
-      final newToken = refreshData['result']['token'];
-      await authService.setAuth(newToken);
-
-      response = await ApiService.get(
-        '/identity/courses/$id',
-        token: authService.accessToken,
-      );
-    } else {
-      await authService.clearAuth();
-      throw UnauthorizedException();
-    }
-  }
-
-  return jsonDecode(response.body);
-}
-
-class _TeacherClassItemPageState extends State<TeacherClassItemPage> {
-  late final Future<Map<String, dynamic>> _dataFuture;
+class _TeacherClassExercisesPageState extends State<TeacherClassExercisesPage> {
+  late final Future<Map<String, dynamic>> _classDataFuture;
 
   @override
   void initState() {
     super.initState();
-    _dataFuture = _loadClassInfo(widget.classId);
+    _classDataFuture = _loadClassInfo(widget.classId);
+  }
+
+  Future<Map<String, dynamic>> _loadClassInfo(String id) async {
+    var response = await ApiService.get(
+      '/identity/courses/$id',
+      token: authService.accessToken,
+    );
+    
+    if (response.statusCode == 401) {
+      var refreshResponse = await ApiService.post(
+        '/identity/auth/refresh',
+        body: {'token': authService.accessToken},
+      );
+
+      var refreshData = jsonDecode(refreshResponse.body);
+      if (refreshData['code'] == 1000) {
+        final newToken = refreshData['result']['token'];
+        await authService.setAuth(newToken);
+
+        response = await ApiService.get(
+          '/identity/courses/$id',
+          token: authService.accessToken,
+        );
+      } else {
+        await authService.clearAuth();
+        throw UnauthorizedException();
+      }
+    }
+
+    return jsonDecode(response.body);
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
-      future: _dataFuture,
+      future: _classDataFuture,
       builder: (context, snapshot) {
         Widget content = Container();
         String className = "";
@@ -79,29 +79,6 @@ class _TeacherClassItemPageState extends State<TeacherClassItemPage> {
         } else if (snapshot.hasData) {
           final result = snapshot.data!['result'];
           className = result['name'];
-
-          content = Column(
-            children: [
-              Row(
-                children: [
-                  SizedBox(width: 150, child: Text('Tên lớp'),),
-                  Text('${result['name']}'),
-                ],
-              ),
-              Row(
-                children: [
-                  SizedBox(width: 150, child: Text('Ngày bắt đầu'),),
-                  Text('${result['startDate']}'),
-                ],
-              ),
-              Row(
-                children: [
-                  SizedBox(width: 150, child: Text('Ngày kết thúc'),),
-                  Text('${result['endDate']}'),
-                ],
-              ),
-            ],
-          );
         }
 
         return Title(
@@ -137,8 +114,8 @@ class _TeacherClassItemPageState extends State<TeacherClassItemPage> {
                               context.go('/classes/${widget.classId}');
                             }, 
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
-                              foregroundColor: WidgetStateProperty.all(Colors.white),
+                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
+                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
@@ -179,8 +156,8 @@ class _TeacherClassItemPageState extends State<TeacherClassItemPage> {
                               context.go('/classes/${widget.classId}/exercises');
                             }, 
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              backgroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              foregroundColor: WidgetStateProperty.all(Colors.white),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),

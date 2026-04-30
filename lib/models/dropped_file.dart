@@ -3,12 +3,14 @@ class DroppedFile {
   final String mime;
   final int bytes;
   final String url;
+  final Stream<List<int>>? content;
 
   const DroppedFile({
     required this.name,
     required this.mime,
     required this.bytes,
     required this.url,
+    this.content,
   });
 
   String get size {

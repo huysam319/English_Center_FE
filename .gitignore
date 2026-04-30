@@ -119,5 +119,4 @@ app.*.symbols
 !/dev/ci/**/Gemfile.lock
 
 # Assets
-assets/audios/
-assets/pdfs
+assets/
