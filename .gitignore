@@ -1,11 +1,15 @@
 # Miscellaneous
 *.class
+*.env
 *.lock
 *.log
 *.pyc
 *.swp
 .buildlog/
 .history
+.env
+.env.*
+!.env.example
 
 
 

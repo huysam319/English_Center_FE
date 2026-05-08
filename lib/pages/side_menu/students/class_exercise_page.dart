@@ -1,4 +1,4 @@
-import 'package:english_center_fe/widgets/layout/layout.dart';
+import 'package:english_center_fe/pages/students/ai_reading_student_page.dart';
 import 'package:flutter/material.dart';
 
 class ClassExercisePage extends StatelessWidget {
@@ -6,15 +6,7 @@ class ClassExercisePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Title(
-      color: Colors.black,
-      title: "Bài tập trên lớp",
-      child: SiteLayout(
-        menuNo: 5,
-        content: Container(
-          color: Color(0xFFF1F3F4),
-        ),
-      ),
-    );
+    // "Bài tập của bạn" hiển thị các đề Reading AI mà giáo viên đã giao cho lớp.
+    return const AiReadingStudentPage(menuOrder: 5);
   }
 }

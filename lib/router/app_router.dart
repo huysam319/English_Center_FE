@@ -27,8 +27,10 @@ import '../pages/side_menu/students/ticket_page.dart';
 import '../pages/side_menu/teachers/classes_page.dart';
 import '../pages/side_menu/teachers/exercises_page.dart';
 import '../pages/side_menu/teachers/questions_page.dart';
+import '../pages/students/ai_reading_student_page.dart';
 import '../pages/students/flashcard_set_page.dart';
 import '../pages/students/test_item_page.dart';
+import '../pages/teachers/ai_reading_assignments_page.dart';
 import '../pages/teachers/create_test_page.dart';
 import '../pages/teachers/teacher_class_attendances_page.dart';
 import '../pages/teachers/teacher_class_exercises_page.dart';
@@ -57,79 +59,56 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/login',
-      pageBuilder: (context, state) => MaterialPage(
-        child: LoginPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: LoginPage()),
     ),
     GoRoute(
       path: '/authenticate',
-      pageBuilder: (context, state) => MaterialPage(
-        child: AuthenticationPage(),
-      ),
+      pageBuilder: (context, state) =>
+          MaterialPage(child: AuthenticationPage()),
     ),
     GoRoute(
       path: '/update-account',
-      pageBuilder: (context, state) => MaterialPage(
-        child: UpdateAccountPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: UpdateAccountPage()),
     ),
 
     GoRoute(
       path: '/',
-      pageBuilder: (context, state) => MaterialPage(
-        child: HomePage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: HomePage()),
     ),
     GoRoute(
       path: '/notification',
-      pageBuilder: (context, state) => MaterialPage(
-        child: NotificationPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: NotificationPage()),
     ),
     GoRoute(
       path: '/class',
-      pageBuilder: (context, state) => MaterialPage(
-        child: ClassPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: ClassPage()),
     ),
     GoRoute(
       path: '/exercise',
-      pageBuilder: (context, state) => MaterialPage(
-        child: ExercisePage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: ExercisePage()),
     ),
     GoRoute(
       path: '/class/exercise',
-      pageBuilder: (context, state) => MaterialPage(
-        child: ClassExercisePage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: ClassExercisePage()),
     ),
     GoRoute(
       path: '/test',
-      pageBuilder: (context, state) => MaterialPage(
-        child: TestPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: TestPage()),
     ),
     GoRoute(
       path: '/test/history',
-      pageBuilder: (context, state) => MaterialPage(
-        child: TestHistoryPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: TestHistoryPage()),
     ),
     GoRoute(
       path: '/test/:testId',
-      pageBuilder: (context, state) { 
+      pageBuilder: (context, state) {
         final testId = state.pathParameters['testId'];
-        return MaterialPage(
-          child: TestItemPage(testId: testId ?? '',),
-        );
-      }
+        return MaterialPage(child: TestItemPage(testId: testId ?? ''));
+      },
     ),
     GoRoute(
       path: '/flashcard',
-      pageBuilder: (context, state) => MaterialPage(
-        child: FlashcardPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: FlashcardPage()),
     ),
     GoRoute(
       path: '/flashcard/:flashcardSetId',
@@ -138,43 +117,50 @@ final GoRouter appRouter = GoRouter(
         return MaterialPage(
           child: FlashcardSetPage(flashcardSetId: flashcardSetId ?? ''),
         );
-      }
+      },
     ),
     GoRoute(
       path: '/ticket',
-      pageBuilder: (context, state) => MaterialPage(
-        child: TicketPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: TicketPage()),
     ),
     GoRoute(
       path: '/exercises',
-      pageBuilder: (context, state) => MaterialPage(
-        child: ExercisesPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: ExercisesPage()),
     ),
     GoRoute(
       path: '/tests',
-      pageBuilder: (context, state) => MaterialPage(
-        child: TestsPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: TestsPage()),
+    ),
+    GoRoute(
+      path: '/ai-reading-teacher',
+      pageBuilder: (context, state) =>
+          MaterialPage(child: AiReadingAssignmentsPage()),
+    ),
+    GoRoute(
+      path: '/ai-reading',
+      pageBuilder: (context, state) =>
+          MaterialPage(child: AiReadingStudentPage()),
+    ),
+    GoRoute(
+      path: '/classes/:classId/ai-reading',
+      pageBuilder: (context, state) {
+        final classId = state.pathParameters['classId'];
+        return MaterialPage(
+          child: AiReadingAssignmentsPage(classId: classId),
+        );
+      },
     ),
     GoRoute(
       path: '/tests/create',
-      pageBuilder: (context, state) => MaterialPage(
-        child: CreateTestPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: CreateTestPage()),
     ),
     GoRoute(
       path: '/questions',
-      pageBuilder: (context, state) => MaterialPage(
-        child: QuestionsPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: QuestionsPage()),
     ),
     GoRoute(
       path: '/classes',
-      pageBuilder: (context, state) => MaterialPage(
-        child: ClassesPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: ClassesPage()),
     ),
     GoRoute(
       path: '/classes/:classId',
@@ -192,7 +178,7 @@ final GoRouter appRouter = GoRouter(
         return MaterialPage(
           child: TeacherClassStudentsPage(classId: classId ?? ''),
         );
-      }
+      },
     ),
     GoRoute(
       path: '/classes/:classId/exercises',
@@ -201,7 +187,7 @@ final GoRouter appRouter = GoRouter(
         return MaterialPage(
           child: TeacherClassExercisesPage(classId: classId ?? ''),
         );
-      }
+      },
     ),
     GoRoute(
       path: '/classes/:classId/attendances',
@@ -210,55 +196,44 @@ final GoRouter appRouter = GoRouter(
         return MaterialPage(
           child: TeacherClassAttendancesPage(classId: classId ?? ''),
         );
-      }
+      },
     ),
-    
+
     GoRoute(
       path: '/teacher-management',
-      pageBuilder: (context, state) => MaterialPage(
-        child: TeacherManagementPage(),
-      ),
+      pageBuilder: (context, state) =>
+          MaterialPage(child: TeacherManagementPage()),
     ),
     GoRoute(
       path: '/student-management',
-      pageBuilder: (context, state) => MaterialPage(
-        child: StudentManagementPage(),
-      ),
+      pageBuilder: (context, state) =>
+          MaterialPage(child: StudentManagementPage()),
     ),
     GoRoute(
       path: '/class-management',
-      pageBuilder: (context, state) => MaterialPage(
-        child: ClassManagementPage(),
-      ),
+      pageBuilder: (context, state) =>
+          MaterialPage(child: ClassManagementPage()),
     ),
 
     GoRoute(
       path: '/class-management/create',
-      pageBuilder: (context, state) => MaterialPage(
-        child: CreateClassPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: CreateClassPage()),
     ),
     GoRoute(
       path: '/teacher-management/create',
-      pageBuilder: (context, state) => MaterialPage(
-        child: CreateTeacherPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: CreateTeacherPage()),
     ),
     GoRoute(
       path: '/student-management/create',
-      pageBuilder: (context, state) => MaterialPage(
-        child: CreateStudentPage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: CreateStudentPage()),
     ),
-    
+
     GoRoute(
       path: '/teacher-management/:id',
       pageBuilder: (context, state) {
         final teacherId = state.pathParameters['id'];
-        return MaterialPage(
-          child: TeacherDetailPage(id: teacherId ?? ''),
-        );
-      }
+        return MaterialPage(child: TeacherDetailPage(id: teacherId ?? ''));
+      },
     ),
     GoRoute(
       path: '/student-management/:id',
@@ -276,32 +251,26 @@ final GoRouter appRouter = GoRouter(
         return MaterialPage(
           child: AddEnrolmentPage(studentId: studentId ?? ''),
         );
-      }
+      },
     ),
     GoRoute(
       path: '/class-management/:classId',
       pageBuilder: (context, state) {
         final classId = state.pathParameters['classId'];
-        return MaterialPage(
-          child: ClassDetailPage(classId: classId ?? ''),
-        );
+        return MaterialPage(child: ClassDetailPage(classId: classId ?? ''));
       },
     ),
     GoRoute(
       path: '/class-management/:classId/add-class-session',
       pageBuilder: (context, state) {
         final classId = state.pathParameters['classId'];
-        return MaterialPage(
-          child: AddClassSessionPage(classId: classId ?? ''),
-        );
-      }
+        return MaterialPage(child: AddClassSessionPage(classId: classId ?? ''));
+      },
     ),
-    
+
     GoRoute(
       path: '/profile',
-      pageBuilder: (context, state) => MaterialPage(
-        child: ProfilePage(),
-      ),
+      pageBuilder: (context, state) => MaterialPage(child: ProfilePage()),
     ),
   ],
 );

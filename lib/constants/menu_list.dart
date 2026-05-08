@@ -15,4 +15,5 @@ final List<String> menuList = [
   "Quản lý lớp học",
   "Quản lý giáo viên",
   "Quản lý học viên",
+  "Reading AI",
 ];
