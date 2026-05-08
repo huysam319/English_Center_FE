@@ -28,9 +28,15 @@ import '../pages/side_menu/teachers/classes_page.dart';
 import '../pages/side_menu/teachers/exercises_page.dart';
 import '../pages/side_menu/teachers/questions_page.dart';
 import '../pages/students/flashcard_set_page.dart';
+import '../pages/students/student_exercise_item_page.dart';
+import '../pages/students/student_exercise_submission_page.dart';
+import '../pages/students/student_class_item_page.dart';
 import '../pages/students/test_item_page.dart';
+import '../pages/teachers/class_writing_exercise_grade_page.dart';
 import '../pages/teachers/create_test_page.dart';
 import '../pages/teachers/teacher_class_attendances_page.dart';
+import '../pages/teachers/teacher_class_create_exercise_page.dart';
+import '../pages/teachers/teacher_class_exercise_detail_page.dart';
 import '../pages/teachers/teacher_class_exercises_page.dart';
 import '../pages/teachers/teacher_class_item_page.dart';
 import '../pages/teachers/teacher_class_students_page.dart';
@@ -93,10 +99,41 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/class/:classId',
+      pageBuilder: (context, state) {
+        final classId = state.pathParameters['classId'];
+        return MaterialPage(
+          child: StudentClassItemPage(classId: classId ?? ''),
+        );
+      }
+    ),
+    GoRoute(
       path: '/exercise',
       pageBuilder: (context, state) => MaterialPage(
         child: ExercisePage(),
       ),
+    ),
+    GoRoute(
+      path: '/exercise/:exerciseId',
+      pageBuilder: (context, state) {
+        final exerciseId = state.pathParameters['exerciseId'];
+        final attemptId = state.uri.queryParameters['attemptId'];
+
+        if (attemptId != null && attemptId.isNotEmpty) {
+          return MaterialPage(
+            child: StudentExerciseSubmissionPage(
+              exerciseId: exerciseId ?? '',
+              attemptId: attemptId,
+            ),
+          );
+        }
+
+        return MaterialPage(
+          child: StudentExerciseItemPage(
+            exerciseId: exerciseId ?? '',
+          ),
+        );
+      }
     ),
     GoRoute(
       path: '/class/exercise',
@@ -209,6 +246,42 @@ final GoRouter appRouter = GoRouter(
         final classId = state.pathParameters['classId'];
         return MaterialPage(
           child: TeacherClassAttendancesPage(classId: classId ?? ''),
+        );
+      }
+    ),
+    GoRoute(
+      path: '/classes/:classId/create-exercise',
+      pageBuilder: (context, state) {
+        final classId = state.pathParameters['classId'];
+        return MaterialPage(
+          child: TeacherClassCreateExercisePage(classId: classId ?? ''),
+        );
+      },
+      
+    ),
+    GoRoute(
+      path: '/classes/:classId/exercises/:exerciseId',
+      pageBuilder: (context, state) {
+        final classId = state.pathParameters['classId'];
+        final exerciseId = state.pathParameters['exerciseId'];
+        return MaterialPage(
+          child: TeacherClassExerciseDetailPage(
+            classId: classId ?? '', 
+            exerciseId: exerciseId ?? '',
+          ),
+        );
+      }
+    ),
+    GoRoute(
+      path: '/classes/:classId/exercises/:exerciseId/grading',
+      pageBuilder: (context, state) {
+        final classId = state.pathParameters['classId'];
+        final exerciseId = state.pathParameters['exerciseId'];
+        return MaterialPage(
+          child: ClassWritingExerciseGradePage(
+            classId: classId ?? '',
+            exerciseId: exerciseId ?? '',
+          ),
         );
       }
     ),

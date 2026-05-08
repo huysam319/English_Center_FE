@@ -77,7 +77,6 @@ class _LoginPageState extends State<LoginPage> {
     final data = jsonDecode(response.body);
 
     if (data != null && data['code'] == 1009) {
-      usernameController.clear();
       passwordController.clear();
 
       if (!context.mounted) return;
