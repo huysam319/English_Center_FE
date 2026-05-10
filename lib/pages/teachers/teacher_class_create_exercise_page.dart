@@ -501,7 +501,7 @@ class _TeacherClassCreateExercisePageState extends State<TeacherClassCreateExerc
                                 body: {
                                   'title': _titleController.text.trim(),
                                   'classIds': [widget.classId],
-                                  'type': 'TEST',
+                                  'type': 'EXERCISE',
                                 },
                               );
 

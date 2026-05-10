@@ -117,10 +117,10 @@ class SideMenu extends StatelessWidget {
               SizedBox(height: 5),
 
               SingleMenuButton(
-                icon: Icons.mail_outlined,
-                label: "Ticket",
+                icon: Icons.support_agent_outlined,
+                label: "Hỗ trợ học tập",
                 func: () {
-                  context.go("/ticket");
+                  context.go("/learning-support");
                 },
                 isActive: (order == 9) ? true : false,
               ),

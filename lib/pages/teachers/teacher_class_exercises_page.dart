@@ -211,117 +211,121 @@ class _TeacherClassExercisesPageState extends State<TeacherClassExercisesPage> {
             content: SelectionArea(
               child: Container(
                 color: Colors.white,
-                child: Padding(
-                  padding: EdgeInsets.all(30),
-                  child: Column(
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Lớp $className',
-                          style: TextStyle(
-                            color: Color(0xFF1E40AF),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: 20,),
-
-                      Row(
+                child: ListView(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.all(30),
+                      child: Column(
                         children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              context.go('/classes/${widget.classId}');
-                            }, 
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
-                              overlayColor: WidgetStateProperty.all(
-                                Colors.transparent,
-                              ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
-                              elevation: WidgetStateProperty.all(0),
-                              shape: WidgetStateProperty.all(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Lớp $className',
+                              style: TextStyle(
+                                color: Color(0xFF1E40AF),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
                               ),
                             ),
-                            child: Text("Lớp học"),
                           ),
-                          SizedBox(width: 2,),
-                          ElevatedButton(
-                            onPressed: () {
-                              context.go('/classes/${widget.classId}/students');
-                            }, 
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
-                              overlayColor: WidgetStateProperty.all(
-                                Colors.transparent,
-                              ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
-                              elevation: WidgetStateProperty.all(0),
-                              shape: WidgetStateProperty.all(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
+
+                          SizedBox(height: 20,),
+
+                          Row(
+                            children: [
+                              ElevatedButton(
+                                onPressed: () {
+                                  context.go('/classes/${widget.classId}');
+                                }, 
+                                style: ButtonStyle(
+                                  backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
+                                  foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                                  overlayColor: WidgetStateProperty.all(
+                                    Colors.transparent,
+                                  ),
+                                  minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                                  elevation: WidgetStateProperty.all(0),
+                                  shape: WidgetStateProperty.all(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
                                 ),
+                                child: Text("Lớp học"),
                               ),
-                            ),
-                            child: Text("Học viên"),
-                          ),
-                          SizedBox(width: 2,),
-                          ElevatedButton(
-                            onPressed: () {
-                              context.go('/classes/${widget.classId}/exercises');
-                            }, 
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
-                              foregroundColor: WidgetStateProperty.all(Colors.white),
-                              overlayColor: WidgetStateProperty.all(
-                                Colors.transparent,
-                              ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
-                              elevation: WidgetStateProperty.all(0),
-                              shape: WidgetStateProperty.all(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
+                              SizedBox(width: 2,),
+                              ElevatedButton(
+                                onPressed: () {
+                                  context.go('/classes/${widget.classId}/students');
+                                }, 
+                                style: ButtonStyle(
+                                  backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
+                                  foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                                  overlayColor: WidgetStateProperty.all(
+                                    Colors.transparent,
+                                  ),
+                                  minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                                  elevation: WidgetStateProperty.all(0),
+                                  shape: WidgetStateProperty.all(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
                                 ),
+                                child: Text("Học viên"),
                               ),
-                            ),
-                            child: Text("Bài tập"),
-                          ),
-                          SizedBox(width: 2,),
-                          ElevatedButton(
-                            onPressed: () {
-                              context.go('/classes/${widget.classId}/attendances');
-                            }, 
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
-                              overlayColor: WidgetStateProperty.all(
-                                Colors.transparent,
-                              ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
-                              elevation: WidgetStateProperty.all(0),
-                              shape: WidgetStateProperty.all(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
+                              SizedBox(width: 2,),
+                              ElevatedButton(
+                                onPressed: () {
+                                  context.go('/classes/${widget.classId}/exercises');
+                                }, 
+                                style: ButtonStyle(
+                                  backgroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                                  foregroundColor: WidgetStateProperty.all(Colors.white),
+                                  overlayColor: WidgetStateProperty.all(
+                                    Colors.transparent,
+                                  ),
+                                  minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                                  elevation: WidgetStateProperty.all(0),
+                                  shape: WidgetStateProperty.all(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
                                 ),
+                                child: Text("Bài tập"),
                               ),
-                            ),
-                            child: Text("Điểm danh"),
+                              SizedBox(width: 2,),
+                              ElevatedButton(
+                                onPressed: () {
+                                  context.go('/classes/${widget.classId}/attendances');
+                                }, 
+                                style: ButtonStyle(
+                                  backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
+                                  foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                                  overlayColor: WidgetStateProperty.all(
+                                    Colors.transparent,
+                                  ),
+                                  minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                                  elevation: WidgetStateProperty.all(0),
+                                  shape: WidgetStateProperty.all(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                ),
+                                child: Text("Điểm danh"),
+                              ),
+                            ],
                           ),
+
+                          SizedBox(height: 20,),
+
+                          content,
                         ],
                       ),
-
-                      SizedBox(height: 20,),
-
-                      content,
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

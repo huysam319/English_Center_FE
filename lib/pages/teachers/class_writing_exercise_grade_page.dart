@@ -23,40 +23,9 @@ class ClassWritingExerciseGradePage extends StatefulWidget {
 }
 
 class _ClassWritingExerciseGradePageState extends State<ClassWritingExerciseGradePage> {
-  // late final Future<Map<String, dynamic>> _exerciseDataFuture;
   late final Future<Map<String, dynamic>> _attemptsDataFuture;
 
   List<WritingExerciseGrade> grades = [];
-
-  // Future<Map<String, dynamic>> _loadExerciseInfo(String exerciseId) async {
-  //   var response = await ApiService.get(
-  //     '/identity/assessments/$exerciseId',
-  //     token: authService.accessToken,
-  //   );
-
-  //   if (response.statusCode == 401) {
-  //     var refreshResponse = await ApiService.post(
-  //       '/identity/auth/refresh',
-  //       body: {'token': authService.accessToken},
-  //     );
-
-  //     var refreshData = jsonDecode(refreshResponse.body);
-  //     if (refreshData['code'] == 1000) {
-  //       final newToken = refreshData['result']['token'];
-  //       await authService.setAuth(newToken);
-
-  //       response = await ApiService.get(
-  //         '/identity/assessments/$exerciseId',
-  //         token: authService.accessToken,
-  //       );
-  //     } else {
-  //       await authService.clearAuth();
-  //       throw UnauthorizedException();
-  //     }
-  //   }
-
-  //   return jsonDecode(response.body);
-  // }
 
   Future<Map<String, dynamic>> _loadAttemptsData(String exerciseId) async {
     var response = await ApiService.get(
@@ -220,7 +189,6 @@ class _ClassWritingExerciseGradePageState extends State<ClassWritingExerciseGrad
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('Chấm điểm task ${answer['questionNumber']} thành công')),
                                     );
-                                    context.go('/class-management');
                                   } else {
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(

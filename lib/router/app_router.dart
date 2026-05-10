@@ -23,11 +23,12 @@ import '../pages/side_menu/students/flashcard_page.dart';
 import '../pages/side_menu/students/notification_page.dart';
 import '../pages/side_menu/students/test_history_page.dart';
 import '../pages/side_menu/students/test_page.dart';
-import '../pages/side_menu/students/ticket_page.dart';
+import '../pages/side_menu/students/learning_support_page.dart';
 import '../pages/side_menu/teachers/classes_page.dart';
 import '../pages/side_menu/teachers/exercises_page.dart';
 import '../pages/side_menu/teachers/questions_page.dart';
 import '../pages/students/flashcard_set_page.dart';
+import '../pages/students/learning_support_quiz_page.dart';
 import '../pages/students/student_exercise_item_page.dart';
 import '../pages/students/student_exercise_submission_page.dart';
 import '../pages/students/student_class_item_page.dart';
@@ -178,9 +179,15 @@ final GoRouter appRouter = GoRouter(
       }
     ),
     GoRoute(
-      path: '/ticket',
+      path: '/learning-support',
       pageBuilder: (context, state) => MaterialPage(
-        child: TicketPage(),
+        child: LearningSupportPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/learning-support/quiz',
+      pageBuilder: (context, state) => MaterialPage(
+        child: LearningSupportQuizPage(),
       ),
     ),
     GoRoute(

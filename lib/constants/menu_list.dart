@@ -7,7 +7,7 @@ final List<String> menuList = [
   "Danh sách đề thi",
   "Lịch sử làm bài",
   "Flashcards",
-  "Ticket",
+  "Hỗ trợ học tập",
   "Bài tập",
   "Đề thi",
   "Ngân hàng câu hỏi",

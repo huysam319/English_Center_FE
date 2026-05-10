@@ -115,16 +115,16 @@ class _StudentExerciseItemPageState extends State<StudentExerciseItemPage> {
             content: SelectionArea( 
               child: Container(
                 color: Colors.white,
-                child: Padding(
+                child: ListView(
                   padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${exerciseData['title'] ?? ""}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  children: [
+                    Text('${exerciseData['title'] ?? ""}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
 
-                      SizedBox(height: 20),
+                    SizedBox(height: 20),
 
-                      TextButton(
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
                         onPressed: () {
                           showDialog<bool>(
                             context: context,
@@ -219,53 +219,60 @@ class _StudentExerciseItemPageState extends State<StudentExerciseItemPage> {
                         ),
                         child: const Text('Thực hiện bài tập'),
                       ),
+                    ),
 
-                      SizedBox(height: 20),
+                    SizedBox(height: 20),
 
-                      Text(
-                        'Tổng quan các lần làm bài trước',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    Text(
+                      'Tổng quan các lần làm bài trước',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
+                    ),
 
-                      FutureBuilder(
-                        future: _attemptsDataFuture, 
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          } else if (snapshot.hasError) {
-                            return const Center(child: Text('Lỗi tải thông tin các lần làm bài'));
-                          } else if (snapshot.hasData) {
-                            final attempts = snapshot.data!['result'] as List;
-                            if (attempts.isEmpty) {
-                              return const Text('Chưa có lần làm bài nào');
-                            }
-                            return ListView.separated(
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemCount: attempts.length,
-                              separatorBuilder: (context, index) => Divider(),
-                              itemBuilder: (context, index) {
-                                final attempt = attempts[index];
-                                return ListTile(
-                                  title: Text('Attempt ${attempt['id']} - Điểm: ${attempt['score']}'),
-                                  subtitle: Text('Trạng thái: ${attempt['status']}'),
-                                  onTap: () {
-                                    // Chuyển sang trang chi tiết lần làm bài này
-                                    // Cần truyền attemptId để tải dữ liệu chi tiết
-                                  },
-                                );
-                              },
-                            );
-                          } else {
-                            return const Center(child: Text('Không có dữ liệu'));
+                    FutureBuilder(
+                      future: _attemptsDataFuture, 
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return const Center(child: Text('Lỗi tải thông tin các lần làm bài'));
+                        } else if (snapshot.hasData) {
+                          final attempts = snapshot.data!['result'] as List;
+                          if (attempts.isEmpty) {
+                            return const Text('Chưa có lần làm bài nào');
                           }
-                        },
-                      ),
-                    ],
-                  ),
+                          return ListView.separated(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: attempts.length,
+                            separatorBuilder: (context, index) => Divider(),
+                            itemBuilder: (context, index) {
+                              final attempt = attempts[index];
+                              return ListTile(
+                                title: Text('Lần làm bài ${attempt['attemptNo']}'),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Trạng thái: ${attempt['status']}'),
+                                    Text('Thời gian bắt đầu: ${DateTime.parse(attempt['startTime']).toLocal()}'),
+                                    Text('Thời gian nộp bài: ${attempt['status'] == 'COMPLETED' ? DateTime.parse(attempt['endTime']).toLocal() : 'Chưa nộp'}'),
+                                  ],
+                                ),
+                                onTap: () {
+                                  // Chuyển sang trang chi tiết lần làm bài này
+                                  // Cần truyền attemptId để tải dữ liệu chi tiết
+                                },
+                              );
+                            },
+                          );
+                        } else {
+                          return const Center(child: Text('Không có dữ liệu'));
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),

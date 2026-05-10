@@ -25,16 +25,18 @@ class StudentExerciseSubmissionPage extends StatefulWidget {
 }
 
 class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissionPage> {
-  late final Future<Map<String, dynamic>> _dataFuture;
+  Future<Map<String, dynamic>>? _dataFuture;
+  Future<Map<String, dynamic>>? _partFuture;
+  bool isInitialized = false;
   late final String attemptId;
   final GlobalKey<CountdownTimerState> _timerKey = GlobalKey<CountdownTimerState>();
 
   int activeSection = 1;
   List<dynamic> answerModels = [];
 
-  Future<Map<String, dynamic>> _loadPartInfo(String exerciseId, int partNumber) async {
+  Future<Map<String, dynamic>> _loadAttemptInfo(String attemptId) async {
     var response = await ApiService.get(
-      '/identity/writing-assessments/$exerciseId&partNumber=$partNumber',
+      '/identity/attempts/$attemptId',
       token: authService.accessToken,
     );
 
@@ -50,7 +52,7 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
         await authService.setAuth(newToken);
 
         response = await ApiService.get(
-          '/identity/writing-assessments/$exerciseId&partNumber=$partNumber',
+          '/identity/attempts/$attemptId',
           token: authService.accessToken,
         );
       } else {
@@ -60,15 +62,69 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
     }
 
     final responseData = jsonDecode(response.body);
+    // answerModels = List.generate(
+    //   responseData['result']['totalQuestions'],
+    //   (index) => WritingAnswerModel(partNumber: index + 1),
+    // );
+    // for (var model in answerModels) {
+    //   if (model is WritingAnswerModel) {
+    //     _addWordCountListener(model);
+    //   }
+    // }
+    for (int i = 1; i <= responseData['result']['totalQuestions']; i++) {
+      answerModels.add(WritingAnswerModel(partNumber: i));
+      _addWordCountListener(answerModels.last);
+      var partResponse = await _loadPartInfo(widget.exerciseId, i);
+      if (i == activeSection) {
+        setState(() {
+          _partFuture = Future.value(partResponse);
+        });
+      }
+    }
 
-    final parts = responseData['result']['parts'] as List;
-    answerModels = List.generate(
-      parts.length,
-      (index) => WritingAnswerModel(partNumber: parts[index]['number']),
+    setState(() {
+      isInitialized = true;
+    });
+
+    return responseData;
+  }
+
+  Future<Map<String, dynamic>> _loadPartInfo(String exerciseId, int partNumber) async {
+    var response = await ApiService.get(
+      '/identity/writing-assessments/student/$exerciseId?partNumber=$partNumber',
+      token: authService.accessToken,
     );
-    for (var model in answerModels) {
-      if (model is WritingAnswerModel) {
-        _addWordCountListener(model);
+
+    if (response.statusCode == 401) {
+      var refreshResponse = await ApiService.post(
+        '/identity/auth/refresh',
+        body: {'token': authService.accessToken},
+      );
+
+      var refreshData = jsonDecode(refreshResponse.body);
+      if (refreshData['code'] == 1000) {
+        final newToken = refreshData['result']['token'];
+        await authService.setAuth(newToken);
+
+        response = await ApiService.get(
+          '/identity/writing-assessments/student/$exerciseId?partNumber=$partNumber',
+          token: authService.accessToken,
+        );
+      } else {
+        await authService.clearAuth();
+        throw UnauthorizedException();
+      }
+    };
+
+    final responseData = jsonDecode(response.body);
+
+    if (responseData != null && responseData['code'] == 1000) {
+      final result = responseData['result'];
+      if (result != null) {
+        final currentModel = answerModels.firstWhere((model) => model.partNumber == partNumber);
+        if (currentModel is WritingAnswerModel) {
+          currentModel.groupId = result['questionGroups'][0]['id'] ?? '';
+        }
       }
     }
 
@@ -108,6 +164,7 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
   @override
   void initState() {
     super.initState();
+    _dataFuture = _loadAttemptInfo(widget.attemptId);
   }
 
   @override
@@ -150,7 +207,7 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                     FutureBuilder<Map<String, dynamic>>(
                       future: _dataFuture,
                       builder:(context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState == ConnectionState.waiting || !isInitialized) {
                           return Center(child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
                           final err = snapshot.error;
@@ -164,9 +221,6 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                             child: Text('Lỗi tải thông tin đề thi'),
                           );
                         } else if (snapshot.hasData) {
-                          final result = snapshot.data!['result'];
-                          final parts = result['parts'] as List;
-
                           return TextButton(
                             onPressed: () {
                               showDialog<bool>(
@@ -193,7 +247,7 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                                             body: {
                                               'attemptId': widget.attemptId,
                                               'answers': answerModels.map((model) => {
-                                                'groupId': parts.firstWhere((part) => part['number'] == model.partNumber)['questionGroups'][0]['groupId'],
+                                                'groupId': model.groupId,
                                                 'questionOrder': model.partNumber,
                                                 'textAnswer': model.answerController.document.toPlainText().trim(),
                                               }).toList(),
@@ -217,7 +271,7 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                                                 body: {
                                                   'attemptId': widget.attemptId,
                                                   'answers': answerModels.map((model) => {
-                                                    'groupId': parts.firstWhere((part) => part['number'] == model.partNumber)['questionGroups'][0]['groupId'],
+                                                    'groupId': model.groupId,
                                                     'questionOrder': model.partNumber,
                                                     'textAnswer': model.answerController.document.toPlainText().trim(),
                                                   }).toList(),
@@ -278,7 +332,7 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                     
                 Expanded(
                   child: FutureBuilder<Map<String, dynamic>>(
-                    future: _dataFuture,
+                    future: _partFuture,
                     builder:(context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return Center(child: CircularProgressIndicator());
@@ -291,79 +345,106 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                           return SizedBox.shrink();
                         }
                         return Center(
-                          child: Text('Lỗi tải thông tin đề thi'),
+                          child: Text('Lỗi tải thông tin bài tập'),
                         );
                       } else if (snapshot.hasData) {
                         final result = snapshot.data!['result'];
-                        final parts = result['parts'] as List;
+                        // final currentModels = answerModels.where(
+                        //   (model) => model.partNumber == activeSection,
+                        // );
 
-                        final partData = parts.where((part) => part['number'] == activeSection).first;
+                        // if (currentModels.isEmpty) {
+                        //   return Center(child: CircularProgressIndicator());
+                        // }
+
+                        // final currentModel = currentModels.first;
+                        // final parts = result['parts'] as List;
+
+                        // final partData = parts.where((part) => part['number'] == activeSection).first;
                         return Column(
                           children: [
                             Expanded(
-                              child: Padding(
+                              child: ListView(
                                 padding: EdgeInsets.all(16),
-                                child: ListView(
-                                  children: [
-                                    Html(
-                                      data: partData['text'] ?? 'No title available',
-                                      style: {
-                                        "body": html.Style(fontSize: FontSize(16.0)),
-                                      },
-                                    ),
-                                    SizedBox(height: 10,),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        border: Border.all(
-                                          color: Colors.black,
-                                          width: 1,
-                                        ),
-                                        borderRadius: BorderRadius.circular(8),
+                                children: [
+                                  Html(
+                                    data: result['text'] ?? 'No text available',
+                                    style: {
+                                      "body": html.Style(fontSize: FontSize(16.0)),
+                                    },
+                                  ),
+                                  if (result['imageUrl'] != null) Image.network(result['imageUrl']),
+                                  SizedBox(height: 10,),
+
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      border: Border.all(
+                                        color: Colors.black,
+                                        width: 1,
                                       ),
-                                      child: QuillEditor(
-                                        controller: answerModels.firstWhere((model) => model.partNumber == activeSection).answerController,
-                                        scrollController: ScrollController(),
-                                        focusNode: FocusNode(),
-                                        config: QuillEditorConfig(
-                                          padding: EdgeInsets.all(10),
-                                          autoFocus: false,
-                                          expands: false,
-                                          placeholder: 'Add your answer here...',
-                                        ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: QuillEditor(
+                                      controller: answerModels.firstWhere((model) => model.partNumber == activeSection).answerController,
+                                      scrollController: ScrollController(),
+                                      focusNode: FocusNode(),
+                                      config: QuillEditorConfig(
+                                        padding: EdgeInsets.all(10),
+                                        autoFocus: false,
+                                        expands: false,
+                                        placeholder: 'Add your answer here...',
                                       ),
-                                    ),
-                                    SizedBox(height: 5,),
-                                    ValueListenableBuilder<int>(
-                                      valueListenable: answerModels.firstWhere((model) => model.partNumber == activeSection)
-                                          .wordCountNotifier,
-                                      builder: (context, value, child) {
-                                        return Align(
-                                          alignment: Alignment.centerRight,
-                                          child: Text('Word count: $value',),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                for (var part in parts)
-                                  Expanded(
-                                    child: SectionNavbar(
-                                      isActive: activeSection == part['number'],
-                                      label: "Task", 
-                                      number: part['number'],
-                                      onChanged: () {
-                                        setState(() {
-                                          activeSection = part['number'];
-                                        });
-                                      },
                                     ),
                                   ),
-                              ],
+                                  SizedBox(height: 5,),
+                                  ValueListenableBuilder<int>(
+                                    valueListenable: answerModels.firstWhere((model) => model.partNumber == activeSection)
+                                        .wordCountNotifier,
+                                    builder: (context, value, child) {
+                                      return Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Text('Word count: $value',),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            FutureBuilder(
+                              future: _dataFuture, 
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return SizedBox.shrink();
+                                } else if (snapshot.hasError) {
+                                  return SizedBox.shrink();
+                                } else if (snapshot.hasData) {
+                                  final result = snapshot.data!['result'];
+                                  final totalQuestions = result['totalQuestions'];
+
+                                  return Row(
+                                    children: [
+                                      for (int i = 1; i <= totalQuestions; i++)
+                                        Expanded(
+                                          child: SectionNavbar(
+                                            isActive: activeSection == i,
+                                            label: "Task", 
+                                            number: i,
+                                            onChanged: () {
+                                              setState(() {
+                                                activeSection = i;
+                                                _partFuture = _loadPartInfo(widget.exerciseId, activeSection);
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                    ],
+                                  );
+                                }
+                                else {
+                                  return Container();
+                                }
+                              },
                             ),
                           ],
                         );
