@@ -15,7 +15,8 @@ class TeacherClassStudentsPage extends StatefulWidget {
   const TeacherClassStudentsPage({super.key, required this.classId});
 
   @override
-  State<TeacherClassStudentsPage> createState() => _TeacherClassStudentsPageState();
+  State<TeacherClassStudentsPage> createState() =>
+      _TeacherClassStudentsPageState();
 }
 
 Future<Map<String, dynamic>> _loadClassInfo(String id) async {
@@ -23,7 +24,7 @@ Future<Map<String, dynamic>> _loadClassInfo(String id) async {
     '/identity/courses/$id',
     token: authService.accessToken,
   );
-  
+
   if (response.statusCode == 401) {
     var refreshResponse = await ApiService.post(
       '/identity/auth/refresh',
@@ -48,7 +49,9 @@ Future<Map<String, dynamic>> _loadClassInfo(String id) async {
   return jsonDecode(response.body);
 }
 
-Future<Map<String, dynamic>> _loadStudentsByClassSessionId(String classSessionId) async {
+Future<Map<String, dynamic>> _loadStudentsByClassSessionId(
+  String classSessionId,
+) async {
   var response = await ApiService.get(
     '/identity/class_sessions/$classSessionId',
     token: authService.accessToken,
@@ -102,12 +105,16 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
     _classSessionsFuture = _loadClassSessions(widget.classId, 0, 10);
   }
 
-  Future<Map<String, dynamic>> _loadClassSessions(String classId, int page, int size) async {
+  Future<Map<String, dynamic>> _loadClassSessions(
+    String classId,
+    int page,
+    int size,
+  ) async {
     var response = await ApiService.get(
       '/identity/class_sessions/allclasssessions/$classId?page=$page&size=$size',
       token: authService.accessToken,
     );
-    
+
     if (response.statusCode == 401) {
       var refreshResponse = await ApiService.post(
         '/identity/auth/refresh',
@@ -149,9 +156,7 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
             });
             content = SizedBox.shrink();
           }
-          content = Center(
-            child: Text('Lỗi tải thông tin lớp học'),
-          );
+          content = Center(child: Text('Lỗi tải thông tin lớp học'));
         } else if (snapshot.hasData) {
           final result = snapshot.data!['result'];
           className = result['name'];
@@ -159,7 +164,7 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
           content = Column(
             children: [
               FutureBuilder<Map<String, dynamic>>(
-                future: _classSessionsFuture, 
+                future: _classSessionsFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
@@ -171,9 +176,7 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
                       });
                       return SizedBox.shrink();
                     }
-                    return Center(
-                      child: Text('Lỗi tải thông tin buổi học'),
-                    );
+                    return Center(child: Text('Lỗi tải thông tin buổi học'));
                   } else if (snapshot.hasData) {
                     final result = snapshot.data!['result']['content'];
                     if (result is! List) {
@@ -184,23 +187,23 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
 
                     final classSessions = result
                         .whereType<Map>()
-                        .map(
-                          (e) => e.map((k, v) => MapEntry(k.toString(), v)),
-                        )
+                        .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
                         .toList();
 
                     if (classSessions.isEmpty) {
-                      return Center(
-                        child: Text('Chưa có buổi học nào'),
-                      );
+                      return Center(child: Text('Chưa có buổi học nào'));
                     }
 
-                    if (_selectedSessionId == null && classSessions.isNotEmpty) {
+                    if (_selectedSessionId == null &&
+                        classSessions.isNotEmpty) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (mounted) {
                           setState(() {
-                            _selectedSessionId = classSessions[0]['id'].toString();
-                            _studentsDataFuture = _loadStudentsByClassSessionId(_selectedSessionId!);
+                            _selectedSessionId = classSessions[0]['id']
+                                .toString();
+                            _studentsDataFuture = _loadStudentsByClassSessionId(
+                              _selectedSessionId!,
+                            );
                           });
                         }
                       });
@@ -213,23 +216,33 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
                             child: ElevatedButton(
                               onPressed: () {
                                 setState(() {
-                                  _selectedSessionId = classSession['id'].toString();
-                                  _studentsDataFuture = _loadStudentsByClassSessionId(_selectedSessionId!);
+                                  _selectedSessionId = classSession['id']
+                                      .toString();
+                                  _studentsDataFuture =
+                                      _loadStudentsByClassSessionId(
+                                        _selectedSessionId!,
+                                      );
                                 });
                               },
                               style: ButtonStyle(
                                 backgroundColor: WidgetStateProperty.all(
-                                  _selectedSessionId == classSession['id'].toString()
-                                      ? Color(0xFF1E40AF)   // xanh
-                                      : Colors.grey.shade300 // xám
+                                  _selectedSessionId ==
+                                          classSession['id'].toString()
+                                      ? Color(0xFF1E40AF) // xanh
+                                      : Colors.grey.shade300, // xám
                                 ),
                                 foregroundColor: WidgetStateProperty.all(
-                                  _selectedSessionId == classSession['id'].toString()
+                                  _selectedSessionId ==
+                                          classSession['id'].toString()
                                       ? Colors.white
-                                      : Colors.black
+                                      : Colors.black,
                                 ),
-                                overlayColor: WidgetStateProperty.all(Colors.transparent),
-                                minimumSize: WidgetStateProperty.all(Size(100, 40)),
+                                overlayColor: WidgetStateProperty.all(
+                                  Colors.transparent,
+                                ),
+                                minimumSize: WidgetStateProperty.all(
+                                  Size(100, 40),
+                                ),
                                 elevation: WidgetStateProperty.all(0),
                                 shape: WidgetStateProperty.all(
                                   RoundedRectangleBorder(
@@ -247,13 +260,14 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
                   } else {
                     return Center(child: Text('No data available'));
                   }
-                }
+                },
               ),
 
-              SizedBox(height: 20,),
+              SizedBox(height: 20),
 
-              FutureBuilder<Map<String, dynamic>>(  // FutureBuilder theo class session
-                future: _studentsDataFuture, 
+              FutureBuilder<Map<String, dynamic>>(
+                // FutureBuilder theo class session
+                future: _studentsDataFuture,
                 builder: (context, snapshot) {
                   // Nếu chưa có future (đang đợi chọn session)
                   if (_studentsDataFuture == null) {
@@ -269,9 +283,7 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
                       });
                       return SizedBox.shrink();
                     }
-                    return Center(
-                      child: Text('Lỗi tải thông tin học viên'),
-                    );
+                    return Center(child: Text('Lỗi tải thông tin học viên'));
                   } else if (snapshot.hasData) {
                     final result = snapshot.data!['result'];
                     if (result is! List) {
@@ -282,15 +294,11 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
 
                     final students = result
                         .whereType<Map>()
-                        .map(
-                          (e) => e.map((k, v) => MapEntry(k.toString(), v)),
-                        )
+                        .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
                         .toList();
 
                     if (students.isEmpty) {
-                      return Center(
-                        child: Text('Chưa có học viên nào'),
-                      );
+                      return Center(child: Text('Chưa có học viên nào'));
                     }
                     return LayoutBuilder(
                       builder: (context, constraints) {
@@ -373,43 +381,50 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
                                     ],
                                     rows: [
                                       for (final studentItem in students)
-                                      DataRow(
-                                        cells: [
-                                          DataCell(
-                                            InkWell(
-                                              child: Text(
-                                                _asCellText(studentItem['studentId']),
+                                        DataRow(
+                                          cells: [
+                                            DataCell(
+                                              InkWell(
+                                                child: Text(
+                                                  _asCellText(
+                                                    studentItem['studentId'],
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                                onTap: () {
+                                                  // context.go('/class-management/${studentItem['id']}');
+                                                },
+                                              ),
+                                            ),
+                                            DataCell(
+                                              Text(
+                                                _asCellText(
+                                                  '${studentItem['lastName']} ${studentItem['firstName']}',
+                                                ),
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
-                                              onTap: () {
-                                                // context.go('/class-management/${studentItem['id']}');
-                                              },
                                             ),
-                                          ),
-                                          DataCell(
-                                            Text(
-                                              _asCellText('${studentItem['lastName']} ${studentItem['firstName']}'),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
+                                            DataCell(
+                                              Text(
+                                                _asCellText(
+                                                  studentItem['username'],
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             ),
-                                          ),
-                                          DataCell(
-                                            Text(
-                                              _asCellText(studentItem['username']),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          // DataCell(
-                                          //   Text(
-                                          //     _asCellText(studentItem['classSessionId']),
-                                          //     maxLines: 2,
-                                          //     overflow: TextOverflow.ellipsis,
-                                          //   ),
-                                          // ),
-                                        ],
-                                      ),
+                                            // DataCell(
+                                            //   Text(
+                                            //     _asCellText(studentItem['classSessionId']),
+                                            //     maxLines: 2,
+                                            //     overflow: TextOverflow.ellipsis,
+                                            //   ),
+                                            // ),
+                                          ],
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -422,7 +437,7 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
                   } else {
                     return Center(child: Text('No data available'));
                   }
-                }
+                },
               ),
             ],
           );
@@ -452,21 +467,27 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
                         ),
                       ),
 
-                      SizedBox(height: 20,),
+                      SizedBox(height: 20),
 
                       Row(
                         children: [
                           ElevatedButton(
                             onPressed: () {
                               context.go('/classes/${widget.classId}');
-                            }, 
+                            },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              backgroundColor: WidgetStateProperty.all(
+                                Color(0xFFF1F3F4),
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                Color(0xFF1E40AF),
+                              ),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              minimumSize: WidgetStateProperty.all(
+                                Size(150, 50),
+                              ),
                               elevation: WidgetStateProperty.all(0),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
@@ -476,18 +497,24 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
                             ),
                             child: Text("Lớp học"),
                           ),
-                          SizedBox(width: 2,),
+                          SizedBox(width: 2),
                           ElevatedButton(
                             onPressed: () {
                               context.go('/classes/${widget.classId}/students');
-                            }, 
+                            },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
-                              foregroundColor: WidgetStateProperty.all(Colors.white),
+                              backgroundColor: WidgetStateProperty.all(
+                                Color(0xFF1E40AF),
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                Colors.white,
+                              ),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              minimumSize: WidgetStateProperty.all(
+                                Size(150, 50),
+                              ),
                               elevation: WidgetStateProperty.all(0),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
@@ -497,18 +524,26 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
                             ),
                             child: Text("Học viên"),
                           ),
-                          SizedBox(width: 2,),
+                          SizedBox(width: 2),
                           ElevatedButton(
                             onPressed: () {
-                              context.go('/classes/${widget.classId}/exercises');
-                            }, 
+                              context.go(
+                                '/classes/${widget.classId}/exercises',
+                              );
+                            },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              backgroundColor: WidgetStateProperty.all(
+                                Color(0xFFF1F3F4),
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                Color(0xFF1E40AF),
+                              ),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              minimumSize: WidgetStateProperty.all(
+                                Size(150, 50),
+                              ),
                               elevation: WidgetStateProperty.all(0),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
@@ -518,18 +553,26 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
                             ),
                             child: Text("Bài tập"),
                           ),
-                          SizedBox(width: 2,),
+                          SizedBox(width: 2),
                           ElevatedButton(
                             onPressed: () {
-                              context.go('/classes/${widget.classId}/attendances');
+                              context.go(
+                                '/classes/${widget.classId}/attendances',
+                              );
                             },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              backgroundColor: WidgetStateProperty.all(
+                                Color(0xFFF1F3F4),
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                Color(0xFF1E40AF),
+                              ),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              minimumSize: WidgetStateProperty.all(
+                                Size(150, 50),
+                              ),
                               elevation: WidgetStateProperty.all(0),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
@@ -539,31 +582,10 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
                             ),
                             child: Text("Điểm danh"),
                           ),
-                          SizedBox(width: 2,),
-                          ElevatedButton(
-                            onPressed: () {
-                              context.go('/classes/${widget.classId}/ai-reading');
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
-                              overlayColor: WidgetStateProperty.all(
-                                Colors.transparent,
-                              ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
-                              elevation: WidgetStateProperty.all(0),
-                              shape: WidgetStateProperty.all(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                            ),
-                            child: Text("Reading AI"),
-                          ),
                         ],
                       ),
 
-                      SizedBox(height: 40,),
+                      SizedBox(height: 40),
 
                       content,
                     ],
@@ -573,7 +595,7 @@ class _TeacherClassStudentsPageState extends State<TeacherClassStudentsPage> {
             ),
           ),
         );
-      }
+      },
     );
   }
 }

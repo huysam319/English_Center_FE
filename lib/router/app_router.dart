@@ -27,7 +27,6 @@ import '../pages/side_menu/students/ticket_page.dart';
 import '../pages/side_menu/teachers/classes_page.dart';
 import '../pages/side_menu/teachers/exercises_page.dart';
 import '../pages/side_menu/teachers/questions_page.dart';
-import '../pages/students/ai_reading_student_page.dart';
 import '../pages/students/flashcard_set_page.dart';
 import '../pages/students/test_item_page.dart';
 import '../pages/teachers/ai_reading_assignments_page.dart';
@@ -133,21 +132,17 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/ai-reading-teacher',
-      pageBuilder: (context, state) =>
-          MaterialPage(child: AiReadingAssignmentsPage()),
+      pageBuilder: (context, state) => MaterialPage(child: ExercisesPage()),
     ),
     GoRoute(
       path: '/ai-reading',
-      pageBuilder: (context, state) =>
-          MaterialPage(child: AiReadingStudentPage()),
+      pageBuilder: (context, state) => MaterialPage(child: ClassExercisePage()),
     ),
     GoRoute(
       path: '/classes/:classId/ai-reading',
       pageBuilder: (context, state) {
         final classId = state.pathParameters['classId'];
-        return MaterialPage(
-          child: AiReadingAssignmentsPage(classId: classId),
-        );
+        return MaterialPage(child: AiReadingAssignmentsPage(classId: classId));
       },
     ),
     GoRoute(

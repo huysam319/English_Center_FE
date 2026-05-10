@@ -16,7 +16,7 @@ class AiReadingStudentPage extends StatefulWidget {
   const AiReadingStudentPage({super.key, this.menuOrder = 5});
 
   /// Sidebar order to highlight when this page is shown. Defaults to 5
-  /// ("Bài tập của bạn") since Reading AI bài tập được giao thuộc nhóm này.
+  /// ("Bài tập của bạn") vì bài đọc AI được giao thuộc nhóm bài tập trên lớp.
   final int menuOrder;
 
   @override
@@ -160,6 +160,24 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
     });
   }
 
+  List<Map<String, dynamic>> _resourceList(dynamic value) {
+    if (value is List) {
+      return value
+          .whereType<Map>()
+          .map((item) => item.map((key, value) => MapEntry('$key', value)))
+          .toList();
+    }
+    if (value is String && value.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(value);
+        return _resourceList(decoded);
+      } catch (_) {
+        return [];
+      }
+    }
+    return [];
+  }
+
   Future<void> _downloadFile(String id, String fileName) async {
     final response = await http.get(
       Uri.parse(
@@ -297,6 +315,7 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
             'mySubmissionStatus': submission['status'],
             'myScore': submission['score'],
             'myRecommendation': submission['recommendation'],
+            'myRecommendedResources': submission['recommendedResources'],
           });
         }
       }
@@ -320,6 +339,11 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  void _openResource(String url) {
+    if (url.trim().isEmpty) return;
+    html.window.open(url, '_blank');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Title(
@@ -332,7 +356,7 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
           child: _loading
               ? Center(child: CircularProgressIndicator())
               : _loadError != null
-              ? Center(child: Text('Không tải được dữ liệu Reading AI'))
+              ? Center(child: Text('Không tải được dữ liệu bài đọc AI'))
               : DefaultTabController(
                   length: 2,
                   child: Column(
@@ -343,7 +367,7 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
                         child: Row(
                           children: [
                             Text(
-                              'Bài tập Reading AI',
+                              'Bài đọc AI được giao',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
@@ -385,7 +409,7 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
 
   Widget _buildAssignments(List<Map<String, dynamic>> assignments) {
     if (assignments.isEmpty) {
-      return Center(child: Text('Chưa có đề Reading AI nào'));
+      return Center(child: Text('Chưa có bài đọc AI nào'));
     }
     return ListView(
       padding: EdgeInsets.all(24),
@@ -464,6 +488,9 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
                   padding: EdgeInsets.only(top: 12),
                   child: Text('Gợi ý: ${assignment['myRecommendation']}'),
                 ),
+              _buildResourceLinks(
+                _resourceList(assignment['myRecommendedResources']),
+              ),
             ],
           ),
         );
@@ -517,10 +544,47 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
                   padding: EdgeInsets.only(top: 10),
                   child: Text('Gợi ý: ${result['recommendation']}'),
                 ),
+              _buildResourceLinks(
+                _resourceList(result['recommendedResources']),
+              ),
             ],
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildResourceLinks(List<Map<String, dynamic>> resources) {
+    if (resources.isEmpty) return SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Link ôn tập đề xuất',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: resources.map((resource) {
+              final title = resource['title']?.toString() ?? 'Tài liệu ôn tập';
+              final url = resource['url']?.toString() ?? '';
+              final source = resource['source']?.toString() ?? '';
+              return Tooltip(
+                message: resource['description']?.toString() ?? title,
+                child: OutlinedButton.icon(
+                  onPressed: url.isEmpty ? null : () => _openResource(url),
+                  icon: Icon(Icons.open_in_new_outlined, size: 16),
+                  label: Text(source.isEmpty ? title : '$title - $source'),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 }

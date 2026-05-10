@@ -206,6 +206,24 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     return [];
   }
 
+  List<Map<String, dynamic>> _resourceList(dynamic value) {
+    if (value is List) {
+      return value
+          .whereType<Map>()
+          .map((item) => item.map((key, value) => MapEntry('$key', value)))
+          .toList();
+    }
+    if (value is String && value.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(value);
+        return _resourceList(decoded);
+      } catch (_) {
+        return [];
+      }
+    }
+    return [];
+  }
+
   Future<void> _pickDueDate() async {
     final now = DateTime.now();
     final selected = await showDatePicker(
@@ -286,7 +304,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
       final body = await response.stream.bytesToString();
       final decoded = body.isNotEmpty ? jsonDecode(body) : {};
       if (response.statusCode == 200 && decoded['code'] == 1000) {
-        _showSnackBar('Đã tạo đề Reading AI.');
+        _showSnackBar('Đã tạo bài đọc AI.');
         _titleController.clear();
         _instructionController.clear();
         _dateController.clear();
@@ -522,6 +540,11 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  void _openResource(String url) {
+    if (url.trim().isEmpty) return;
+    html.window.open(url, '_blank');
+  }
+
   Widget _buildClassNavTabs() {
     if (widget.classId == null) return SizedBox.shrink();
     final classId = widget.classId!;
@@ -553,9 +576,8 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
       children: [
         tab('Lớp học', '/classes/$classId'),
         tab('Học viên', '/classes/$classId/students'),
-        tab('Bài tập', '/classes/$classId/exercises'),
+        tab('Bài tập', '/classes/$classId/exercises', active: true),
         tab('Điểm danh', '/classes/$classId/attendances'),
-        tab('Reading AI', '/classes/$classId/ai-reading', active: true),
       ],
     );
   }
@@ -565,9 +587,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     final scoped = widget.classId != null;
     return Title(
       color: Colors.black,
-      title: scoped
-          ? 'Reading AI | Lớp $_className'
-          : 'Reading AI',
+      title: scoped ? 'Bài tập | Lớp $_className' : 'Bài tập',
       child: SiteLayout(
         menuNo: scoped ? 13 : 0,
         content: Container(
@@ -575,7 +595,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
           child: _loading
               ? Center(child: CircularProgressIndicator())
               : _loadError != null
-              ? Center(child: Text('Không tải được dữ liệu Reading AI'))
+              ? Center(child: Text('Không tải được dữ liệu bài đọc AI'))
               : ListView(
                   padding: EdgeInsets.all(24),
                   children: [
@@ -603,10 +623,10 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                               Icons.arrow_circle_left_outlined,
                               size: 30,
                             ),
-                            onPressed: () => context.go('/tests'),
+                            onPressed: () => context.go('/exercises'),
                           ),
                         Text(
-                          'Reading AI',
+                          'Bài đọc AI',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -635,7 +655,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                     if (_assignments.isEmpty)
                       Padding(
                         padding: EdgeInsets.all(24),
-                        child: Center(child: Text('Chưa có đề Reading AI nào')),
+                        child: Center(child: Text('Chưa có bài đọc AI nào')),
                       )
                     else
                       ..._assignments.map(_buildAssignmentTile),
@@ -658,7 +678,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tạo đề Reading từ file',
+            'Tạo bài đọc AI từ file',
             style: TextStyle(fontWeight: FontWeight.w700),
           ),
           SizedBox(height: 12),
@@ -768,7 +788,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Icon(Icons.add),
-                label: Text('Tạo đề'),
+                label: Text('Tạo bài'),
               ),
             ],
           ),
@@ -863,6 +883,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                   DataColumn(label: Text('Điểm')),
                   DataColumn(label: Text('Trạng thái')),
                   DataColumn(label: Text('Gợi ý')),
+                  DataColumn(label: Text('Link ôn tập')),
                 ],
                 rows: submissions.map((submission) {
                   final name =
@@ -870,6 +891,9 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                           .trim();
                   final recommendation =
                       submission['recommendation']?.toString() ?? '';
+                  final resources = _resourceList(
+                    submission['recommendedResources'],
+                  );
                   return DataRow(
                     cells: [
                       DataCell(
@@ -893,6 +917,12 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                           ),
                         ),
                       ),
+                      DataCell(
+                        SizedBox(
+                          width: 360,
+                          child: _buildResourceLinks(resources),
+                        ),
+                      ),
                     ],
                   );
                 }).toList(),
@@ -900,6 +930,29 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildResourceLinks(List<Map<String, dynamic>> resources) {
+    if (resources.isEmpty) {
+      return Text('Chưa có');
+    }
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: resources.take(3).map((resource) {
+        final title = resource['title']?.toString() ?? 'Tài liệu ôn tập';
+        final url = resource['url']?.toString() ?? '';
+        final source = resource['source']?.toString() ?? '';
+        return Tooltip(
+          message: resource['description']?.toString() ?? title,
+          child: TextButton.icon(
+            onPressed: url.isEmpty ? null : () => _openResource(url),
+            icon: Icon(Icons.open_in_new_outlined, size: 16),
+            label: Text(source.isEmpty ? title : source),
+          ),
+        );
+      }).toList(),
     );
   }
 }

@@ -6,7 +6,7 @@ class ClassExercisePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // "Bài tập của bạn" hiển thị các đề Reading AI mà giáo viên đã giao cho lớp.
+    // "Bài tập của bạn" hiển thị các bài đọc AI mà giáo viên đã giao cho lớp.
     return const AiReadingStudentPage(menuOrder: 5);
   }
 }
