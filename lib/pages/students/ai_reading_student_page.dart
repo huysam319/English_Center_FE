@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:universal_html/html.dart' as html;
@@ -70,9 +71,18 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
 
   List<Map<String, dynamic>> _resultList(String body) {
     final decoded = jsonDecode(body);
-    final result = decoded['result'];
-    if (result is List) {
-      return result
+    if (decoded is Map) {
+      final result = decoded['result'];
+      final rawList = result is Map ? result['content'] : result;
+      if (rawList is List) {
+        return rawList
+            .whereType<Map>()
+            .map((item) => item.map((key, value) => MapEntry('$key', value)))
+            .toList();
+      }
+    }
+    if (decoded is List) {
+      return decoded
           .whereType<Map>()
           .map((item) => item.map((key, value) => MapEntry('$key', value)))
           .toList();
@@ -547,6 +557,15 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
               _buildResourceLinks(
                 _resourceList(result['recommendedResources']),
               ),
+              if (result['score'] != null)
+                Padding(
+                  padding: EdgeInsets.only(top: 12),
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.go('/flashcard'),
+                    icon: Icon(Icons.style_outlined, size: 16),
+                    label: Text('Ôn lỗi sai trong Flashcards'),
+                  ),
+                ),
             ],
           ),
         );

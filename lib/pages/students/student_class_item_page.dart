@@ -88,6 +88,24 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
     return jsonDecode(response.body);
   }
 
+  Map<String, dynamic>? _extractMap(dynamic value) {
+    if (value is Map) {
+      return value.map((key, value) => MapEntry('$key', value));
+    }
+    return null;
+  }
+
+  List<Map<String, dynamic>> _extractList(dynamic value) {
+    final rawList = value is Map ? value['content'] : value;
+    if (rawList is! List) {
+      return [];
+    }
+    return rawList
+        .whereType<Map>()
+        .map((item) => item.map((key, value) => MapEntry('$key', value)))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
@@ -109,8 +127,13 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
             child: Text('Lỗi tải thông tin lớp học'),
           );
         } else if (snapshot.hasData) {
-          final result = snapshot.data!['result'];
-          className = result['name'];
+          final result = _extractMap(snapshot.data!['result']);
+          if (result == null) {
+            content = Center(
+              child: Text('Dá»¯ liá»‡u lá»›p há»c khÃ´ng há»£p lá»‡'),
+            );
+          } else {
+            className = result['name']?.toString() ?? '';
 
           content = Column(
             children: [
@@ -130,8 +153,8 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
                   } else if (snapshot.hasError) {
                     return Center(child: Text('Lỗi tải danh sách bài tập'));
                   } else if (snapshot.hasData) {
-                    final result = snapshot.data!['result'];
-                    if (result is! List) {
+                    final result = _extractList(snapshot.data!['result']);
+                    if (result.isEmpty) {
                       return Center(
                         child: Text('Dữ liệu bài tập không hợp lệ'),
                       );
@@ -173,13 +196,14 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
               ),
             ],
           );
+          }
         }
 
         return Title(
           color: Colors.black,
           title: "Lớp $className",
           child: SiteLayout(
-            menuNo: 13,
+            menuNo: 3,
             content: SelectionArea(
               child: Container(
                 color: Colors.white,

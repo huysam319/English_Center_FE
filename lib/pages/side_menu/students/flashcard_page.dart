@@ -54,7 +54,21 @@ class _FlashcardPageState extends State<FlashcardPage> {
       }
     }
 
-    return jsonDecode(response.body);
+    final decoded = jsonDecode(response.body);
+    return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+  }
+
+  List<Map<String, dynamic>> _extractFlashcardSets(Map<String, dynamic>? data) {
+    final result = data?['result'];
+    final rawList = result is Map ? result['content'] : result;
+    if (rawList is! List) {
+      return [];
+    }
+
+    return rawList
+        .whereType<Map>()
+        .map((item) => item.map((key, value) => MapEntry('$key', value)))
+        .toList();
   }
 
   @override
@@ -201,7 +215,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
                                             await authService.setAuth(newToken);
 
                                             response = await ApiService.post(
-                                              '/identity/courses',
+                                              '/identity/flashcards',
                                               token: authService.accessToken,
                                               body: {
                                                 'name': _flashcardSetNameController.text,
@@ -299,14 +313,15 @@ class _FlashcardPageState extends State<FlashcardPage> {
                             child: Text('Lỗi tải thông tin bộ flashcard'),
                           );
                         } else if (snapshot.hasData) {
-                          final result = snapshot.data!['result']['content'];
+                          final flashcardSets = _extractFlashcardSets(snapshot.data);
+                          final result = flashcardSets;
                           if (result is! List) {
                             return Center(
                               child: Text('Dữ liệu bộ flashcard không hợp lệ'),
                             );
                           }
 
-                          final flashcardSets = result
+                          final ignoredFlashcardSets = result
                               .whereType<Map>()
                               .map(
                                 (e) => e.map((k, v) => MapEntry(k.toString(), v)),

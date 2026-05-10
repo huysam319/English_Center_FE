@@ -90,6 +90,10 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => MaterialPage(child: ClassPage()),
     ),
     GoRoute(
+      path: '/class/exercise',
+      pageBuilder: (context, state) => MaterialPage(child: ClassExercisePage()),
+    ),
+    GoRoute(
       path: '/class/:classId',
       pageBuilder: (context, state) {
         final classId = state.pathParameters['classId'];
@@ -121,10 +125,6 @@ final GoRouter appRouter = GoRouter(
           child: StudentExerciseItemPage(exerciseId: exerciseId ?? ''),
         );
       },
-    ),
-    GoRoute(
-      path: '/class/exercise',
-      pageBuilder: (context, state) => MaterialPage(child: ClassExercisePage()),
     ),
     GoRoute(
       path: '/test',
