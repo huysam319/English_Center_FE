@@ -23,6 +23,7 @@ AppBar topNavigationBar(BuildContext context, GlobalKey<ScaffoldState> key, Stri
           color: Colors.grey.shade300,
         ),
       ),
+      scrolledUnderElevation: 0,
       title: Row(
         children: [
           SizedBox(
@@ -30,7 +31,7 @@ AppBar topNavigationBar(BuildContext context, GlobalKey<ScaffoldState> key, Stri
             child: Row(
               children: [
                 IconButton(
-                  icon: Image.asset("assets/icons/logo.png", height: 30, width: 100,),
+                  icon: Image.asset("assets/icons/logo.jpg", height: 50, width: 100,),
                   onPressed: () { context.go("/"); },
                   splashColor: Colors.transparent,
                   highlightColor: Colors.transparent,

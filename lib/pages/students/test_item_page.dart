@@ -99,16 +99,27 @@ class _TestItemPageState extends State<TestItemPage> {
           color: Colors.white,
           child: Column(
             children: [
-              isTimer
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.access_time_outlined),
-                      SizedBox(width: 5),
-                      CountdownTimer(key: _timerKey, seconds: 3600,),
-                    ],
-                  )
-                : Container(),
+              Row(
+                children: [
+                  Expanded(
+                    child: isTimer
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.access_time_outlined),
+                            SizedBox(width: 5),
+                            CountdownTimer(key: _timerKey, seconds: 3600,),
+                          ],
+                        )
+                      : Container(),
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    child: Text('Nộp bài'),
+                  ),
+                ],
+              ),
+                  
               Expanded(
                 child: FutureBuilder<Map<String, dynamic>>(
                   future: _dataFuture,
@@ -177,7 +188,7 @@ class _TestItemPageState extends State<TestItemPage> {
                                   Expanded(
                                     child: Padding(
                                       padding: EdgeInsets.symmetric(vertical: 20, horizontal: 5),
-                                      child:  ListView(
+                                      child: ListView(
                                         children: [
                                           Text(
                                             "Questions 1-7: Do the following statements agree with the information given in the passage? In boxes 1-7 write",
