@@ -185,6 +185,20 @@ class _TeacherClassExercisesPageState extends State<TeacherClassExercisesPage> {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (exercises[index]['skill'] != null)
+                                Text(
+                                  'Kỹ năng: ${exercises[index]['skill']?.toString()}'
+                                ),
+                              if (exercises[index]['createdAt'] != null)
+                                Text(
+                                  'Ngày tạo: ${DateTime.parse(exercises[index]['createdAt']).toLocal().toString().split('.').first}',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                )
+                            ],
+                          ),
                           onTap: () {
                             context.go('/classes/${widget.classId}/exercises/${exercises[index]['id']}');
                           },

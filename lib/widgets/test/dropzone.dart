@@ -23,12 +23,12 @@ class _DropzoneState extends State<Dropzone> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        color: isHighlighted ? Colors.blue : Colors.green,
-        height: 250,
+        color: isHighlighted ? Colors.white : Color(0xFF1E40AF),
+        height: 260,
         padding: EdgeInsets.all(10),
         child: DottedBorder( 
           options: RoundedRectDottedBorderOptions(
-            color: Colors.white,
+            color: isHighlighted ? Color(0xFF1E40AF) : Colors.white,
             padding: EdgeInsets.all(0),
             strokeWidth: 3,
             dashPattern: [8, 4],
@@ -40,22 +40,30 @@ class _DropzoneState extends State<Dropzone> {
                 onCreated: (controller) => this.controller = controller,
                 onHover: () => setState(() => isHighlighted = true),
                 onLeave: () => setState(() => isHighlighted = false),
+                onDrop: (_) => setState(() => isHighlighted = false),
                 onDropFile: acceptFile,
               ),
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.upload_file_outlined, size: 80, color: Colors.white,),
+                    Icon(
+                      Icons.upload_file_outlined, 
+                      size: 80, 
+                      color: isHighlighted ? Colors.black : Colors.white,
+                    ),
                     Text(
-                      'Drop file here',
-                      style: TextStyle(fontSize: 18, color: Colors.white,),
+                      'Kéo thả file vào đây',
+                      style: TextStyle(
+                        fontSize: 18, 
+                        color: isHighlighted ? Colors.black : Colors.white,
+                      ),
                     ),
                     SizedBox(height: 16),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        backgroundColor: isHighlighted ? Colors.blue.shade300 : Colors.green.shade300,
+                        backgroundColor: isHighlighted ? Colors.blue.shade300 : Colors.blue.shade300,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -63,7 +71,7 @@ class _DropzoneState extends State<Dropzone> {
                       ),
                       icon: Icon(Icons.search_outlined, size: 32),
                       label: Text(
-                        'Choose file',
+                        'Chọn file',
                         style: TextStyle(fontSize: 18, color: Colors.white,),
                       ),
                       onPressed: () async {
@@ -74,15 +82,19 @@ class _DropzoneState extends State<Dropzone> {
                       }, 
                     ),
                     SizedBox(height: 16),
-                    widget.file != null
-                      ? Text(
-                        'Selected file: ${widget.file!.name}, size: ${widget.file!.size}, type: ${widget.file!.mime}',
-                        style: TextStyle(fontSize: 16, color: Colors.white,),
-                      )
-                      : Text(
-                        'No file selected', 
-                        style: TextStyle(fontSize: 16, color: Colors.white,),
+
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8,),
+                      child: Text(
+                        widget.file != null
+                          ? 'File được chọn: ${widget.file!.name}, size: ${widget.file!.size}, type: ${widget.file!.mime}'
+                          : 'Chưa có file nào được chọn',
+                        style: TextStyle(
+                          fontSize: 16, 
+                          color: isHighlighted ? Colors.black : Colors.white,
+                        ),
                       ),
+                    ),
                   ],
                 ),
               ),
