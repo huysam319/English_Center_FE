@@ -459,24 +459,34 @@ class _CreateTestPageState extends State<CreateTestPage> {
                                     part.id = _parts.indexOf(part);
                                   }
                                 });
-                              }
+                              },
                             );
                           }
                           return ReadingPartCreation(
                             part: part,
                             parts: _parts,
-                            questionTypeSelectionsByPart: _questionTypeSelectionsByPart,
-                            multipleChoiceDraftsByPart: _multipleChoiceDraftsByPart,
-                            trueFalseNotGivenDraftsByPart: _trueFalseNotGivenDraftsByPart,
+                            questionTypeSelectionsByPart:
+                                _questionTypeSelectionsByPart,
+                            multipleChoiceDraftsByPart:
+                                _multipleChoiceDraftsByPart,
+                            trueFalseNotGivenDraftsByPart:
+                                _trueFalseNotGivenDraftsByPart,
                             shortAnswerDraftsByPart: _shortAnswerDraftsByPart,
-                            matchingInformationDraftsByPart: _matchingInformationDraftsByPart,
-                            completionMaterialSelectionsByPart: _completionMaterialSelectionsByPart,
-                            materialTextControllersByPart: _materialTextControllersByPart,
-                            instructionTextControllersByPart: _instructionTextControllersByPart,
-                            blankQuestionNoControllersByPart: _blankQuestionNoControllersByPart,
-                            blankCorrectAnswerControllersByPart: _blankCorrectAnswerControllersByPart,
-                            completionBlankAnswersByPart: _completionBlankAnswersByPart,
-                            labelingOptionsByPart: _labelingOptionsByPart
+                            matchingInformationDraftsByPart:
+                                _matchingInformationDraftsByPart,
+                            completionMaterialSelectionsByPart:
+                                _completionMaterialSelectionsByPart,
+                            materialTextControllersByPart:
+                                _materialTextControllersByPart,
+                            instructionTextControllersByPart:
+                                _instructionTextControllersByPart,
+                            blankQuestionNoControllersByPart:
+                                _blankQuestionNoControllersByPart,
+                            blankCorrectAnswerControllersByPart:
+                                _blankCorrectAnswerControllersByPart,
+                            completionBlankAnswersByPart:
+                                _completionBlankAnswersByPart,
+                            labelingOptionsByPart: _labelingOptionsByPart,
                           );
                         }).toList(),
                       ),
@@ -509,9 +519,12 @@ class _CreateTestPageState extends State<CreateTestPage> {
                                   body: {'token': authService.accessToken},
                                 );
 
-                                var refreshData = jsonDecode(refreshResponse.body);
+                                var refreshData = jsonDecode(
+                                  refreshResponse.body,
+                                );
                                 if (refreshData['code'] == 1000) {
-                                  final newToken = refreshData['result']['token'];
+                                  final newToken =
+                                      refreshData['result']['token'];
                                   await authService.setAuth(newToken);
 
                                   assessmentResponse = await ApiService.post(
@@ -529,8 +542,11 @@ class _CreateTestPageState extends State<CreateTestPage> {
                                 }
                               }
 
-                              final assessmentData = jsonDecode(assessmentResponse.body);
-                              final assessmentId = assessmentData['result']['id'];
+                              final assessmentData = jsonDecode(
+                                assessmentResponse.body,
+                              );
+                              final assessmentId =
+                                  assessmentData['result']['id'];
 
                               for (var part in _parts) {
                                 print("Part ${part.id + 1}:");
@@ -605,7 +621,7 @@ class _CreateTestPageState extends State<CreateTestPage> {
                                                 'answer': blankAnswer
                                                     .correctAnswerController
                                                     .text,
-                                                'choices': []
+                                                'choices': [],
                                               };
                                             }).toList(),
                                           };
@@ -754,43 +770,84 @@ class _CreateTestPageState extends State<CreateTestPage> {
                                                         'content': q.statement,
                                                         'choices': [
                                                           {
-                                                            'order': 1, 
-                                                            'content': (selectedQType == 'T/F/NG') ? 'TRUE' : 'YES',
-                                                            'isCorrect': q.correctAnswer == 'TRUE' || q.correctAnswer == 'YES',
+                                                            'order': 1,
+                                                            'content':
+                                                                (selectedQType ==
+                                                                    'T/F/NG')
+                                                                ? 'TRUE'
+                                                                : 'YES',
+                                                            'isCorrect':
+                                                                q.correctAnswer ==
+                                                                    'TRUE' ||
+                                                                q.correctAnswer ==
+                                                                    'YES',
                                                           },
                                                           {
-                                                            'order': 2, 
-                                                            'content': (selectedQType == 'T/F/NG') ? 'FALSE' : 'NO',
-                                                            'isCorrect': q.correctAnswer == 'FALSE' || q.correctAnswer == 'NO',
+                                                            'order': 2,
+                                                            'content':
+                                                                (selectedQType ==
+                                                                    'T/F/NG')
+                                                                ? 'FALSE'
+                                                                : 'NO',
+                                                            'isCorrect':
+                                                                q.correctAnswer ==
+                                                                    'FALSE' ||
+                                                                q.correctAnswer ==
+                                                                    'NO',
                                                           },
                                                           {
-                                                            'order': 3, 
-                                                            'content': 'NOT GIVEN',
-                                                            'isCorrect': q.correctAnswer == 'NOT GIVEN',
+                                                            'order': 3,
+                                                            'content':
+                                                                'NOT GIVEN',
+                                                            'isCorrect':
+                                                                q.correctAnswer ==
+                                                                'NOT GIVEN',
                                                           },
                                                         ],
-                                                        'answer': q.correctAnswer,
+                                                        'answer':
+                                                            q.correctAnswer,
                                                       },
                                                     )
                                                     .toList(),
                                           };
                                         }
 
-                                        if (selectedQType == 'Matching information') {
+                                        if (selectedQType ==
+                                            'Matching information') {
                                           return {
                                             'type': 'MATCHING',
                                             'instruction': _quillControllerToHtml(
-                                              _instructionTextControllersByPart[part.id]![qTypeIndex],
+                                              _instructionTextControllersByPart[part
+                                                  .id]![qTypeIndex],
                                             ),
-                                            'questions': _matchingInformationDraftsByPart[part.id]![qTypeIndex].questions.map((q) => {
-                                              'order': 0, // You can add an order field if needed
-                                              'content': q.question,
-                                              'answer': q.answer,
-                                            }).toList(),
-                                            'options': _matchingInformationDraftsByPart[part.id]![qTypeIndex].options.asMap().entries.map((optionEntry) => {
-                                              'order': optionEntry.key + 1,
-                                              'content': optionEntry.value,
-                                            }).toList(),
+                                            'questions':
+                                                _matchingInformationDraftsByPart[part
+                                                        .id]![qTypeIndex]
+                                                    .questions
+                                                    .map(
+                                                      (q) => {
+                                                        'order':
+                                                            0, // You can add an order field if needed
+                                                        'content': q.question,
+                                                        'answer': q.answer,
+                                                      },
+                                                    )
+                                                    .toList(),
+                                            'options':
+                                                _matchingInformationDraftsByPart[part
+                                                        .id]![qTypeIndex]
+                                                    .options
+                                                    .asMap()
+                                                    .entries
+                                                    .map(
+                                                      (optionEntry) => {
+                                                        'order':
+                                                            optionEntry.key + 1,
+                                                        'content':
+                                                            optionEntry.value,
+                                                      },
+                                                    )
+                                                    .toList(),
                                           };
                                         }
 
@@ -855,12 +912,17 @@ class _CreateTestPageState extends State<CreateTestPage> {
                                       ),
                                     );
                                   }
-                                }
-                                else if (_selectedSkill == "Writing") {
-                                  var uri = Uri.parse("http://localhost:8080/identity/writing-assessments");
-                                  var request = http.MultipartRequest("POST", uri);
-                                  request.headers['Authorization'] = 'Bearer ${authService.accessToken}';
-                                  
+                                } else if (_selectedSkill == "Writing") {
+                                  var uri = Uri.parse(
+                                    "${ApiService.baseUrl}/identity/writing-assessments",
+                                  );
+                                  var request = http.MultipartRequest(
+                                    "POST",
+                                    uri,
+                                  );
+                                  request.headers['Authorization'] =
+                                      'Bearer ${authService.accessToken}';
+
                                   request.fields['data'] = jsonEncode({
                                     'assessmentId': assessmentId,
                                     'partNumber': part.id + 1,
@@ -872,16 +934,21 @@ class _CreateTestPageState extends State<CreateTestPage> {
 
                                   var filePath = part.file?.url;
                                   if (filePath != null && filePath.isNotEmpty) {
-                                    request.files.add(await http.MultipartFile.fromBytes(
-                                      'file', 
-                                      part.file?.content != null ? await part.file!.content!.reduce((a, b) => a + b) : Uint8List(0),
-                                      filename: part.file?.name,
-                                    ));
+                                    request.files.add(
+                                      await http.MultipartFile.fromBytes(
+                                        'file',
+                                        part.file?.content != null
+                                            ? await part.file!.content!.reduce(
+                                                (a, b) => a + b,
+                                              )
+                                            : Uint8List(0),
+                                        filename: part.file?.name,
+                                      ),
+                                    );
                                   }
                                   print(part.file?.url);
-
                                   // var response = await request.send();
-                                }  
+                                }
                               }
                             },
                             style: ButtonStyle(

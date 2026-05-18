@@ -47,7 +47,7 @@ Future<Map<String, dynamic>> _loadAllTeachers(int page, int size) async {
 }
 
 class _TeacherManagementPageState extends State<TeacherManagementPage> {
-  late final Future<Map<String, dynamic>> _dataFuture;
+  late Future<Map<String, dynamic>> _dataFuture;
   final ScrollController _verticalController = ScrollController();
   final ScrollController _horizontalController = ScrollController();
 
@@ -99,7 +99,9 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                           backgroundColor: WidgetStateProperty.all(
                             Color(0xFF1E40AF),
                           ),
-                          foregroundColor: WidgetStateProperty.all(Colors.white),
+                          foregroundColor: WidgetStateProperty.all(
+                            Colors.white,
+                          ),
                           overlayColor: WidgetStateProperty.all(
                             Colors.transparent,
                           ),
@@ -126,7 +128,8 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                     child: FutureBuilder<Map<String, dynamic>>(
                       future: _dataFuture,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
                           final err = snapshot.error;
@@ -140,7 +143,27 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                             child: Text('Lỗi tải thông tin giáo viên'),
                           );
                         } else if (snapshot.hasData) {
-                          final result = snapshot.data!['result']['content'];
+                          final data = snapshot.data!;
+                          if (data['code'] != 1000) {
+                            return Center(
+                              child: Text(
+                                data['message']?.toString() ??
+                                    'Không tải được danh sách giáo viên',
+                              ),
+                            );
+                          }
+
+                          final rawResult = data['result'];
+                          if (rawResult is! Map) {
+                            return Center(
+                              child: Text('Dữ liệu giáo viên không hợp lệ'),
+                            );
+                          }
+
+                          final resultMap = rawResult.map(
+                            (key, value) => MapEntry(key.toString(), value),
+                          );
+                          final result = resultMap['content'];
                           if (result is! List) {
                             return Center(
                               child: Text('Dữ liệu giáo viên không hợp lệ'),
@@ -150,15 +173,23 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                           final teachers = result
                               .whereType<Map>()
                               .map(
-                                (e) => e.map((k, v) => MapEntry(k.toString(), v)),
+                                (e) =>
+                                    e.map((k, v) => MapEntry(k.toString(), v)),
                               )
                               .toList();
 
                           if (teachers.isEmpty) {
-                            return Center(
-                              child: Text('Chưa có giáo viên nào'),
-                            );
+                            return Center(child: Text('Chưa có giáo viên nào'));
                           }
+
+                          final totalElements =
+                              (resultMap['totalElements'] as num?)?.toInt() ??
+                              0;
+                          final pageSize =
+                              (resultMap['size'] as num?)?.toInt() ?? 10;
+                          final totalPages = totalElements == 0
+                              ? 1
+                              : ((totalElements + pageSize - 1) ~/ pageSize);
 
                           return Column(
                             children: [
@@ -176,19 +207,23 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                         thumbVisibility: true,
                                         interactive: true,
                                         notificationPredicate: (notification) =>
-                                            notification.metrics.axis == Axis.horizontal,
-                                        scrollbarOrientation: ScrollbarOrientation.bottom,
+                                            notification.metrics.axis ==
+                                            Axis.horizontal,
+                                        scrollbarOrientation:
+                                            ScrollbarOrientation.bottom,
                                         child: SingleChildScrollView(
                                           controller: _horizontalController,
                                           scrollDirection: Axis.horizontal,
                                           child: ConstrainedBox(
                                             constraints: BoxConstraints(
-                                              minWidth: constraints.maxWidth - 32,
+                                              minWidth:
+                                                  constraints.maxWidth - 32,
                                             ),
                                             child: DataTable(
-                                              headingRowColor: WidgetStateProperty.all(
-                                                Color(0xFF1E40AF),
-                                              ),
+                                              headingRowColor:
+                                                  WidgetStateProperty.all(
+                                                    Color(0xFF1E40AF),
+                                                  ),
                                               headingRowHeight: 45,
                                               dataRowMinHeight: 40,
                                               dataRowMaxHeight: 40,
@@ -197,11 +232,14 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                                   label: DefaultTextStyle.merge(
                                                     child: Text(
                                                       "Tên đăng nhập",
-                                                      selectionColor: Color(0xFF60A5FA),
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
                                                     ),
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -209,11 +247,14 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                                   label: DefaultTextStyle.merge(
                                                     child: Text(
                                                       "Họ và tên",
-                                                      selectionColor: Color(0xFF60A5FA),
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
                                                     ),
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -221,11 +262,14 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                                   label: DefaultTextStyle.merge(
                                                     child: Text(
                                                       "Ngày sinh",
-                                                      selectionColor: Color(0xFF60A5FA),
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
                                                     ),
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -237,27 +281,39 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                                       DataCell(
                                                         InkWell(
                                                           child: Text(
-                                                            _asCellText(teacher['username']),
+                                                            _asCellText(
+                                                              teacher['username'],
+                                                            ),
                                                             maxLines: 2,
-                                                            overflow: TextOverflow.ellipsis,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                           ),
                                                           onTap: () {
-                                                            context.go('/teacher-management/${teacher['id']}');
+                                                            context.go(
+                                                              '/teacher-management/${teacher['id']}',
+                                                            );
                                                           },
                                                         ),
                                                       ),
                                                       DataCell(
                                                         Text(
-                                                          _asCellText('${teacher['lastName']} ${teacher['firstName']}'),
+                                                          _asCellText(
+                                                            '${teacher['lastName']} ${teacher['firstName']}',
+                                                          ),
                                                           maxLines: 2,
-                                                          overflow: TextOverflow.ellipsis,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
                                                         ),
                                                       ),
                                                       DataCell(
                                                         Text(
-                                                          _asCellText(teacher['dob']),
+                                                          _asCellText(
+                                                            teacher['dob'],
+                                                          ),
                                                           maxLines: 2,
-                                                          overflow: TextOverflow.ellipsis,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
                                                         ),
                                                       ),
                                                     ],
@@ -281,10 +337,13 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                     Expanded(
                                       child: NumberPagination(
                                         onPageChanged: (value) => setState(() {
-                                          _dataFuture = _loadAllTeachers(value - 1, 10);
+                                          _dataFuture = _loadAllTeachers(
+                                            value - 1,
+                                            10,
+                                          );
                                           _currentPage = value;
                                         }),
-                                        totalPages: (snapshot.data!['result']['totalElements'] / snapshot.data!['result']['size'] as double).ceil(),
+                                        totalPages: totalPages,
                                         currentPage: _currentPage,
                                         visiblePagesCount: 10,
                                         buttonElevation: 0,
@@ -295,7 +354,7 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                       ),
                                     ),
 
-                                    SizedBox(width: 5,),
+                                    SizedBox(width: 5),
 
                                     Text(
                                       '${(_currentPage - 1) * 10 + 1} - ${_currentPage * 10 > snapshot.data!['result']['totalElements'] ? snapshot.data!['result']['totalElements'] : _currentPage * 10} của ${snapshot.data!['result']['totalElements']}',

@@ -22,7 +22,7 @@ Future<Map<String, dynamic>> _loadClassInfo(String id) async {
     '/identity/courses/$id',
     token: authService.accessToken,
   );
-  
+
   if (response.statusCode == 401) {
     var refreshResponse = await ApiService.post(
       '/identity/auth/refresh',
@@ -73,9 +73,7 @@ class _TeacherClassItemPageState extends State<TeacherClassItemPage> {
             });
             content = SizedBox.shrink();
           }
-          content = Center(
-            child: Text('Lỗi tải thông tin lớp học'),
-          );
+          content = Center(child: Text('Lỗi tải thông tin lớp học'));
         } else if (snapshot.hasData) {
           final result = snapshot.data!['result'];
           className = result['name'];
@@ -84,19 +82,19 @@ class _TeacherClassItemPageState extends State<TeacherClassItemPage> {
             children: [
               Row(
                 children: [
-                  SizedBox(width: 150, child: Text('Tên lớp'),),
+                  SizedBox(width: 150, child: Text('Tên lớp')),
                   Text('${result['name']}'),
                 ],
               ),
               Row(
                 children: [
-                  SizedBox(width: 150, child: Text('Ngày bắt đầu'),),
+                  SizedBox(width: 150, child: Text('Ngày bắt đầu')),
                   Text('${result['startDate']}'),
                 ],
               ),
               Row(
                 children: [
-                  SizedBox(width: 150, child: Text('Ngày kết thúc'),),
+                  SizedBox(width: 150, child: Text('Ngày kết thúc')),
                   Text('${result['endDate']}'),
                 ],
               ),
@@ -128,21 +126,27 @@ class _TeacherClassItemPageState extends State<TeacherClassItemPage> {
                         ),
                       ),
 
-                      SizedBox(height: 20,),
+                      SizedBox(height: 20),
 
                       Row(
                         children: [
                           ElevatedButton(
                             onPressed: () {
                               context.go('/classes/${widget.classId}');
-                            }, 
+                            },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
-                              foregroundColor: WidgetStateProperty.all(Colors.white),
+                              backgroundColor: WidgetStateProperty.all(
+                                Color(0xFF1E40AF),
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                Colors.white,
+                              ),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              minimumSize: WidgetStateProperty.all(
+                                Size(150, 50),
+                              ),
                               elevation: WidgetStateProperty.all(0),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
@@ -152,18 +156,24 @@ class _TeacherClassItemPageState extends State<TeacherClassItemPage> {
                             ),
                             child: Text("Lớp học"),
                           ),
-                          SizedBox(width: 2,),
+                          SizedBox(width: 2),
                           ElevatedButton(
                             onPressed: () {
                               context.go('/classes/${widget.classId}/students');
-                            }, 
+                            },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              backgroundColor: WidgetStateProperty.all(
+                                Color(0xFFF1F3F4),
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                Color(0xFF1E40AF),
+                              ),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              minimumSize: WidgetStateProperty.all(
+                                Size(150, 50),
+                              ),
                               elevation: WidgetStateProperty.all(0),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
@@ -173,18 +183,26 @@ class _TeacherClassItemPageState extends State<TeacherClassItemPage> {
                             ),
                             child: Text("Học viên"),
                           ),
-                          SizedBox(width: 2,),
+                          SizedBox(width: 2),
                           ElevatedButton(
                             onPressed: () {
-                              context.go('/classes/${widget.classId}/exercises');
-                            }, 
+                              context.go(
+                                '/classes/${widget.classId}/exercises',
+                              );
+                            },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              backgroundColor: WidgetStateProperty.all(
+                                Color(0xFFF1F3F4),
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                Color(0xFF1E40AF),
+                              ),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              minimumSize: WidgetStateProperty.all(
+                                Size(150, 50),
+                              ),
                               elevation: WidgetStateProperty.all(0),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
@@ -194,18 +212,26 @@ class _TeacherClassItemPageState extends State<TeacherClassItemPage> {
                             ),
                             child: Text("Bài tập"),
                           ),
-                          SizedBox(width: 2,),
+                          SizedBox(width: 2),
                           ElevatedButton(
                             onPressed: () {
-                              context.go('/classes/${widget.classId}/attendances');
-                            }, 
+                              context.go(
+                                '/classes/${widget.classId}/attendances',
+                              );
+                            },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              backgroundColor: WidgetStateProperty.all(
+                                Color(0xFFF1F3F4),
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                Color(0xFF1E40AF),
+                              ),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              minimumSize: WidgetStateProperty.all(
+                                Size(150, 50),
+                              ),
                               elevation: WidgetStateProperty.all(0),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
@@ -218,7 +244,7 @@ class _TeacherClassItemPageState extends State<TeacherClassItemPage> {
                         ],
                       ),
 
-                      SizedBox(height: 20,),
+                      SizedBox(height: 20),
 
                       content,
                     ],
@@ -228,7 +254,7 @@ class _TeacherClassItemPageState extends State<TeacherClassItemPage> {
             ),
           ),
         );
-      }
+      },
     );
   }
 }

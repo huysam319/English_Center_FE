@@ -122,6 +122,23 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
     }
   }
 
+  Map<String, dynamic>? _decodeResponseBody(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _responseMessage(Map<String, dynamic>? data, String fallback) {
+    final message = data?['message'];
+    if (message is String && message.trim().isNotEmpty) {
+      return message;
+    }
+    return fallback;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Title(
@@ -302,7 +319,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                   ),
                 ),
 
-                SizedBox(height: 20,),
+                SizedBox(height: 20),
 
                 Row(
                   children: [
@@ -310,14 +327,26 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                     ElevatedButton(
                       onPressed: () async {
                         setState(() {
-                          _usernameError = _usernameController.text.trim().isEmpty;
-                          _passwordError = _passwordController.text.trim().isEmpty;
+                          _usernameError = _usernameController.text
+                              .trim()
+                              .isEmpty;
+                          _passwordError = _passwordController.text
+                              .trim()
+                              .isEmpty;
                           _dobError = _dobController.text.trim().isEmpty;
-                          _lastNameError = _lastNameController.text.trim().isEmpty;
-                          _firstNameError = _firstNameController.text.trim().isEmpty;
+                          _lastNameError = _lastNameController.text
+                              .trim()
+                              .isEmpty;
+                          _firstNameError = _firstNameController.text
+                              .trim()
+                              .isEmpty;
                         });
 
-                        if (_usernameError || _passwordError || _dobError || _lastNameError || _firstNameError) {
+                        if (_usernameError ||
+                            _passwordError ||
+                            _dobError ||
+                            _lastNameError ||
+                            _firstNameError) {
                           return;
                         }
 
@@ -361,17 +390,18 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                           }
                         }
 
-                        final creationData = jsonDecode(creationResponse.body);
-                        if (creationData != null && creationData['code'] == 1000) {
+                        final creationData = _decodeResponseBody(
+                          creationResponse.body,
+                        );
+                        if (creationData != null &&
+                            creationData['code'] == 1000) {
                           var roleResponse = await ApiService.post(
                             '/identity/users/${creationData['result']['id']}/roles',
                             token: authService.accessToken,
-                            body: {
-                              'role': 'TEACHER',
-                            },
+                            body: {'role': 'TEACHER'},
                           );
 
-                          if (creationResponse.statusCode == 401) {
+                          if (roleResponse.statusCode == 401) {
                             var refreshResponse = await ApiService.post(
                               '/identity/auth/refresh',
                               body: {'token': authService.accessToken},
@@ -385,9 +415,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                               roleResponse = await ApiService.post(
                                 '/identity/users/${creationData['result']['id']}/roles',
                                 token: authService.accessToken,
-                                body: {
-                                  'role': 'TEACHER',
-                                },
+                                body: {'role': 'TEACHER'},
                               );
                             } else {
                               await authService.clearAuth();
@@ -395,26 +423,42 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                             }
                           }
 
-                          final roleData = jsonDecode(roleResponse.body);
+                          final roleData = _decodeResponseBody(
+                            roleResponse.body,
+                          );
 
                           if (roleData != null && roleData['code'] == 1000) {
-
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Tạo giáo viên thành công')),
+                              SnackBar(
+                                content: Text('Tạo giáo viên thành công'),
+                              ),
                             );
                             context.go('/teacher-management');
-
                           } else {
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Tạo giáo viên thất bại')),
+                              SnackBar(
+                                content: Text(
+                                  _responseMessage(
+                                    roleData,
+                                    'Tạo giáo viên thất bại',
+                                  ),
+                                ),
+                              ),
                             );
                           }
                         } else {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Tạo giáo viên thất bại')),
+                            SnackBar(
+                              content: Text(
+                                _responseMessage(
+                                  creationData,
+                                  'Tạo giáo viên thất bại',
+                                ),
+                              ),
+                            ),
                           );
                         }
                       },

@@ -17,10 +17,12 @@ class TeacherClassAttendancesPage extends StatefulWidget {
   const TeacherClassAttendancesPage({super.key, required this.classId});
 
   @override
-  State<TeacherClassAttendancesPage> createState() => _TeacherClassAttendancesPageState();
+  State<TeacherClassAttendancesPage> createState() =>
+      _TeacherClassAttendancesPageState();
 }
 
-class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPage> {
+class _TeacherClassAttendancesPageState
+    extends State<TeacherClassAttendancesPage> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedClassSessionId;
   Map<String, dynamic>? _selectedClassSession;
@@ -49,7 +51,7 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
       '/identity/courses/$id',
       token: authService.accessToken,
     );
-    
+
     if (response.statusCode == 401) {
       var refreshResponse = await ApiService.post(
         '/identity/auth/refresh',
@@ -74,7 +76,12 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
     return jsonDecode(response.body);
   }
 
-  Future<List<Map<String, dynamic>>> _loadAllClassSessions(String classId, String filter, int skip, int take) async {
+  Future<List<Map<String, dynamic>>> _loadAllClassSessions(
+    String classId,
+    String filter,
+    int skip,
+    int take,
+  ) async {
     final page = skip ~/ take;
     try {
       var response = await ApiService.get(
@@ -104,7 +111,9 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
       }
 
       final data = jsonDecode(response.body);
-      if (data != null && data['result'] != null && data['result']['content'] != null) {
+      if (data != null &&
+          data['result'] != null &&
+          data['result']['content'] != null) {
         return List<Map<String, dynamic>>.from(data['result']['content']);
       }
       return [];
@@ -117,9 +126,11 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
     }
   }
 
-  Future<Map<String, dynamic>> _loadStudentsByClassSessionId(String classSessionId) async {
+  Future<Map<String, dynamic>> _loadStudentsByClassSessionId(
+    String classSessionId,
+  ) async {
     var response = await ApiService.get(
-      '/identity/class_sessions/$classSessionId',
+      '/identity/attendances/session/$classSessionId',
       token: authService.accessToken,
     );
 
@@ -135,7 +146,7 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
         await authService.setAuth(newToken);
 
         response = await ApiService.get(
-          '/identity/class_sessions/$classSessionId',
+          '/identity/attendances/session/$classSessionId',
           token: authService.accessToken,
         );
       } else {
@@ -164,9 +175,7 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
             });
             content = SizedBox.shrink();
           }
-          content = Center(
-            child: Text('Lỗi tải thông tin lớp học'),
-          );
+          content = Center(child: Text('Lỗi tải thông tin lớp học'));
         } else if (snapshot.hasData) {
           final result = snapshot.data!['result'];
           className = result['name'];
@@ -182,8 +191,14 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                     children: [
                       Expanded(
                         child: DropdownSearch<Map<String, dynamic>>(
-                          items: (filter, loadProps) => _loadAllClassSessions(widget.classId, filter, loadProps!.skip, loadProps.take),
-                          itemAsString: (item) => '${getDayShortName(item['daysOfWeek'])} ${item['startTime']} - ${item['endTime']}',
+                          items: (filter, loadProps) => _loadAllClassSessions(
+                            widget.classId,
+                            filter,
+                            loadProps!.skip,
+                            loadProps.take,
+                          ),
+                          itemAsString: (item) =>
+                              '${getDayShortName(item['daysOfWeek'])} ${item['startTime']} - ${item['endTime']}',
                           compareFn: (a, b) => a['id'] == b['id'],
                           popupProps: PopupProps.menu(
                             disableFilter: true,
@@ -195,26 +210,37 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                             scrollbarProps: ScrollbarProps(
                               thumbVisibility: true,
                             ),
-                            containerBuilder: (context, popupWidget) => Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: Colors.white,
-                              ),
-                              child: popupWidget,
-                            ),
-                            itemBuilder: (context, item, isDisabled, isSelected) => Container(
-                              height: 40,
-                              padding: EdgeInsets.symmetric(horizontal: 16),
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                '${getDayShortName(item['daysOfWeek'])} ${item['startTime']} - ${item['endTime']}',
-                                style: TextStyle(
-                                  color: isSelected ? Color(0xFF1E40AF) : Colors.black,
-                                  fontSize: 14,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            containerBuilder: (context, popupWidget) =>
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: Colors.white,
+                                  ),
+                                  child: popupWidget,
                                 ),
-                              ),
-                            ),
+                            itemBuilder:
+                                (
+                                  context,
+                                  item,
+                                  isDisabled,
+                                  isSelected,
+                                ) => Container(
+                                  height: 40,
+                                  padding: EdgeInsets.symmetric(horizontal: 16),
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    '${getDayShortName(item['daysOfWeek'])} ${item['startTime']} - ${item['endTime']}',
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Color(0xFF1E40AF)
+                                          : Colors.black,
+                                      fontSize: 14,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
                           ),
                           autoValidateMode: AutovalidateMode.onUserInteraction,
                           decoratorProps: DropDownDecoratorProps(
@@ -240,11 +266,17 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                           onChanged: (value) {
                             setState(() {
                               _selectedClassSession = value;
-                              _selectedClassSessionId = value?['id']?.toString();
-                              _studentsDataFuture = _loadStudentsByClassSessionId(_selectedClassSessionId!);
+                              _selectedClassSessionId = value?['id']
+                                  ?.toString();
+                              _attendanceMap.clear();
+                              _studentsDataFuture =
+                                  _loadStudentsByClassSessionId(
+                                    _selectedClassSessionId!,
+                                  );
                             });
                           },
-                          validator: (value) => value == null ? 'Vui lòng chọn buổi học' : null,
+                          validator: (value) =>
+                              value == null ? 'Vui lòng chọn buổi học' : null,
                         ),
                       ),
                       SizedBox(width: 12),
@@ -255,10 +287,11 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                   ),
                 ),
 
-                SizedBox(height: 20,),
+                SizedBox(height: 20),
 
-                FutureBuilder<Map<String, dynamic>>(  // FutureBuilder theo class session
-                  future: _studentsDataFuture, 
+                FutureBuilder<Map<String, dynamic>>(
+                  // FutureBuilder theo class session
+                  future: _studentsDataFuture,
                   builder: (context, snapshot) {
                     // Nếu chưa có future (đang đợi chọn session) - ẩn DataTable
                     if (_studentsDataFuture == null) {
@@ -274,28 +307,36 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                         });
                         return SizedBox.shrink();
                       }
-                      return Center(
-                        child: Text('Lỗi tải thông tin học viên'),
-                      );
+                      return Center(child: Text('Lỗi tải thông tin học viên'));
                     } else if (snapshot.hasData) {
                       final result = snapshot.data!['result'];
-                      if (result is! List) {
+                      final rawStudents = result is Map
+                          ? result['attendances']
+                          : null;
+                      if (rawStudents is! List) {
                         return Center(
                           child: Text('Dữ liệu học viên không hợp lệ'),
                         );
                       }
 
-                      final students = result
+                      final students = rawStudents
                           .whereType<Map>()
                           .map(
                             (e) => e.map((k, v) => MapEntry(k.toString(), v)),
                           )
                           .toList();
 
+                      for (final studentItem in students) {
+                        final studentId = studentItem['studentId']?.toString();
+                        if (studentId != null &&
+                            !_attendanceMap.containsKey(studentId)) {
+                          _attendanceMap[studentId] =
+                              studentItem['status'] == 'absent';
+                        }
+                      }
+
                       if (students.isEmpty) {
-                        return Center(
-                          child: Text('Chưa có học viên nào'),
-                        );
+                        return Center(child: Text('Chưa có học viên nào'));
                       }
                       return LayoutBuilder(
                         builder: (context, constraints) {
@@ -310,8 +351,10 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                                 thumbVisibility: true,
                                 interactive: true,
                                 notificationPredicate: (notification) =>
-                                    notification.metrics.axis == Axis.horizontal,
-                                scrollbarOrientation: ScrollbarOrientation.bottom,
+                                    notification.metrics.axis ==
+                                    Axis.horizontal,
+                                scrollbarOrientation:
+                                    ScrollbarOrientation.bottom,
                                 child: SingleChildScrollView(
                                   controller: _horizontalController,
                                   scrollDirection: Axis.horizontal,
@@ -366,7 +409,7 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                                         DataColumn(
                                           label: DefaultTextStyle.merge(
                                             child: Text(
-                                              "Vắng",
+                                              "Trạng thái",
                                               selectionColor: Color(0xFF60A5FA),
                                             ),
                                             style: TextStyle(
@@ -378,47 +421,77 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                                       ],
                                       rows: [
                                         for (final studentItem in students)
-                                        DataRow(
-                                          cells: [
-                                            DataCell(
-                                              InkWell(
-                                                child: Text(
-                                                  _asCellText(studentItem['studentId']),
-                                                  maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
+                                          DataRow(
+                                            cells: [
+                                              DataCell(
+                                                InkWell(
+                                                  child: Text(
+                                                    _asCellText(
+                                                      studentItem['studentId'],
+                                                    ),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  onTap: () {
+                                                    // context.go('/class-management/${studentItem['id']}');
+                                                  },
                                                 ),
-                                                onTap: () {
-                                                  // context.go('/class-management/${studentItem['id']}');
-                                                },
                                               ),
-                                            ),
-                                            DataCell(
-                                              Text(
-                                                _asCellText('${studentItem['lastName']} ${studentItem['firstName']}'),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
+                                              DataCell(
+                                                Text(
+                                                  _asCellText(
+                                                    '${studentItem['lastName']} ${studentItem['firstName']}',
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
                                               ),
-                                            ),
-                                            DataCell(
-                                              Text(
-                                                _asCellText(studentItem['username']),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
+                                              DataCell(
+                                                Text(
+                                                  _asCellText(
+                                                    studentItem['username'],
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
                                               ),
-                                            ),
-                                            DataCell(
-                                              Checkbox(
-                                                value: _attendanceMap[studentItem['studentId']?.toString()] ?? false,
-                                                onChanged: (bool? value) {
-                                                  setState(() {
-                                                    _attendanceMap[studentItem['studentId']?.toString() ?? ''] = value ?? false;
-                                                  });
-                                                },
-                                                activeColor: Color(0xFF1E40AF),
+                                              DataCell(
+                                                Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Checkbox(
+                                                      value:
+                                                          _attendanceMap[studentItem['studentId']
+                                                              ?.toString()] ??
+                                                          false,
+                                                      onChanged: (bool? value) {
+                                                        setState(() {
+                                                          _attendanceMap[studentItem['studentId']
+                                                                      ?.toString() ??
+                                                                  ''] =
+                                                              value ?? false;
+                                                        });
+                                                      },
+                                                      activeColor: Color(
+                                                        0xFF1E40AF,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      (_attendanceMap[studentItem['studentId']
+                                                                  ?.toString()] ??
+                                                              false)
+                                                          ? 'Vắng'
+                                                          : 'Có mặt',
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
+                                            ],
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -431,9 +504,9 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                     } else {
                       return Center(child: Text('No data available'));
                     }
-                  }
+                  },
                 ),
-                    
+
                 SizedBox(height: 20),
 
                 Row(
@@ -491,7 +564,12 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Điểm danh thành công')),
                           );
-                          context.go('/classes/${widget.classId}');
+                          setState(() {
+                            _attendanceMap.clear();
+                            _studentsDataFuture = _loadStudentsByClassSessionId(
+                              _selectedClassSessionId!,
+                            );
+                          });
                         } else {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -515,7 +593,7 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                           ),
                         ),
                       ),
-                      child: Text('Điểm danh'),
+                      child: Text('Lưu điểm danh'),
                     ),
                     Expanded(child: Container()),
                   ],
@@ -549,21 +627,27 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                         ),
                       ),
 
-                      SizedBox(height: 20,),
+                      SizedBox(height: 20),
 
                       Row(
                         children: [
                           ElevatedButton(
                             onPressed: () {
                               context.go('/classes/${widget.classId}');
-                            }, 
+                            },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              backgroundColor: WidgetStateProperty.all(
+                                Color(0xFFF1F3F4),
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                Color(0xFF1E40AF),
+                              ),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              minimumSize: WidgetStateProperty.all(
+                                Size(150, 50),
+                              ),
                               elevation: WidgetStateProperty.all(0),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
@@ -573,18 +657,24 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                             ),
                             child: Text("Lớp học"),
                           ),
-                          SizedBox(width: 2,),
+                          SizedBox(width: 2),
                           ElevatedButton(
                             onPressed: () {
                               context.go('/classes/${widget.classId}/students');
-                            }, 
+                            },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              backgroundColor: WidgetStateProperty.all(
+                                Color(0xFFF1F3F4),
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                Color(0xFF1E40AF),
+                              ),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              minimumSize: WidgetStateProperty.all(
+                                Size(150, 50),
+                              ),
                               elevation: WidgetStateProperty.all(0),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
@@ -594,18 +684,26 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                             ),
                             child: Text("Học viên"),
                           ),
-                          SizedBox(width: 2,),
+                          SizedBox(width: 2),
                           ElevatedButton(
                             onPressed: () {
-                              context.go('/classes/${widget.classId}/exercises');
-                            }, 
+                              context.go(
+                                '/classes/${widget.classId}/exercises',
+                              );
+                            },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFFF1F3F4)),
-                              foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                              backgroundColor: WidgetStateProperty.all(
+                                Color(0xFFF1F3F4),
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                Color(0xFF1E40AF),
+                              ),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              minimumSize: WidgetStateProperty.all(
+                                Size(150, 50),
+                              ),
                               elevation: WidgetStateProperty.all(0),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
@@ -615,18 +713,26 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                             ),
                             child: Text("Bài tập"),
                           ),
-                          SizedBox(width: 2,),
+                          SizedBox(width: 2),
                           ElevatedButton(
                             onPressed: () {
-                              context.go('/classes/${widget.classId}/attendances');
-                            }, 
+                              context.go(
+                                '/classes/${widget.classId}/attendances',
+                              );
+                            },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
-                              foregroundColor: WidgetStateProperty.all(Colors.white),
+                              backgroundColor: WidgetStateProperty.all(
+                                Color(0xFF1E40AF),
+                              ),
+                              foregroundColor: WidgetStateProperty.all(
+                                Colors.white,
+                              ),
                               overlayColor: WidgetStateProperty.all(
                                 Colors.transparent,
                               ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                              minimumSize: WidgetStateProperty.all(
+                                Size(150, 50),
+                              ),
                               elevation: WidgetStateProperty.all(0),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
@@ -639,7 +745,7 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
                         ],
                       ),
 
-                      SizedBox(height: 40,),
+                      SizedBox(height: 40),
 
                       content,
                     ],
@@ -649,7 +755,7 @@ class _TeacherClassAttendancesPageState extends State<TeacherClassAttendancesPag
             ),
           ),
         );
-      }
+      },
     );
   }
 }

@@ -99,7 +99,9 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                           backgroundColor: WidgetStateProperty.all(
                             Color(0xFF1E40AF),
                           ),
-                          foregroundColor: WidgetStateProperty.all(Colors.white),
+                          foregroundColor: WidgetStateProperty.all(
+                            Colors.white,
+                          ),
                           overlayColor: WidgetStateProperty.all(
                             Colors.transparent,
                           ),
@@ -126,7 +128,8 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                     child: FutureBuilder<Map<String, dynamic>>(
                       future: _dataFuture,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
                           final err = snapshot.error;
@@ -140,7 +143,26 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                             child: Text('Lỗi tải thông tin học viên'),
                           );
                         } else if (snapshot.hasData) {
-                          final resultMap = snapshot.data!['result'] as Map<String, dynamic>;
+                          final data = snapshot.data!;
+                          if (data['code'] != 1000) {
+                            return Center(
+                              child: Text(
+                                data['message']?.toString() ??
+                                    'Không tải được danh sách học viên',
+                              ),
+                            );
+                          }
+
+                          final rawResult = data['result'];
+                          if (rawResult is! Map) {
+                            return Center(
+                              child: Text('Dữ liệu học viên không hợp lệ'),
+                            );
+                          }
+
+                          final resultMap = rawResult.map(
+                            (key, value) => MapEntry(key.toString(), value),
+                          );
                           final result = resultMap['content'];
                           if (result is! List) {
                             return Center(
@@ -148,22 +170,25 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                             );
                           }
 
-                          final totalElements = (resultMap['totalElements'] as num?)?.toInt() ?? 0;
-                          final pageSize = (resultMap['size'] as num?)?.toInt() ?? 10;
-                          final totalPages =
-                              totalElements == 0 ? 1 : ((totalElements + pageSize - 1) ~/ pageSize);
+                          final totalElements =
+                              (resultMap['totalElements'] as num?)?.toInt() ??
+                              0;
+                          final pageSize =
+                              (resultMap['size'] as num?)?.toInt() ?? 10;
+                          final totalPages = totalElements == 0
+                              ? 1
+                              : ((totalElements + pageSize - 1) ~/ pageSize);
 
                           final students = result
                               .whereType<Map>()
                               .map(
-                                (e) => e.map((k, v) => MapEntry(k.toString(), v)),
+                                (e) =>
+                                    e.map((k, v) => MapEntry(k.toString(), v)),
                               )
                               .toList();
 
                           if (students.isEmpty) {
-                            return Center(
-                              child: Text('Chưa có học viên nào'),
-                            );
+                            return Center(child: Text('Chưa có học viên nào'));
                           }
 
                           return Column(
@@ -176,25 +201,34 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                     interactive: true,
                                     child: SingleChildScrollView(
                                       controller: _verticalController,
-                                      padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+                                      padding: EdgeInsets.fromLTRB(
+                                        16,
+                                        0,
+                                        16,
+                                        0,
+                                      ),
                                       child: Scrollbar(
                                         controller: _horizontalController,
                                         thumbVisibility: true,
                                         interactive: true,
                                         notificationPredicate: (notification) =>
-                                            notification.metrics.axis == Axis.horizontal,
-                                        scrollbarOrientation: ScrollbarOrientation.bottom,
+                                            notification.metrics.axis ==
+                                            Axis.horizontal,
+                                        scrollbarOrientation:
+                                            ScrollbarOrientation.bottom,
                                         child: SingleChildScrollView(
                                           controller: _horizontalController,
                                           scrollDirection: Axis.horizontal,
                                           child: ConstrainedBox(
                                             constraints: BoxConstraints(
-                                              minWidth: constraints.maxWidth - 32,
+                                              minWidth:
+                                                  constraints.maxWidth - 32,
                                             ),
                                             child: DataTable(
-                                              headingRowColor: WidgetStateProperty.all(
-                                                Color(0xFF1E40AF),
-                                              ),
+                                              headingRowColor:
+                                                  WidgetStateProperty.all(
+                                                    Color(0xFF1E40AF),
+                                                  ),
                                               headingRowHeight: 45,
                                               dataRowMinHeight: 40,
                                               dataRowMaxHeight: 40,
@@ -203,11 +237,14 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                                   label: DefaultTextStyle.merge(
                                                     child: Text(
                                                       "Tên đăng nhập",
-                                                      selectionColor: Color(0xFF60A5FA),
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
                                                     ),
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -215,11 +252,14 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                                   label: DefaultTextStyle.merge(
                                                     child: Text(
                                                       "Họ và tên",
-                                                      selectionColor: Color(0xFF60A5FA),
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
                                                     ),
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -227,11 +267,14 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                                   label: DefaultTextStyle.merge(
                                                     child: Text(
                                                       "Ngày sinh",
-                                                      selectionColor: Color(0xFF60A5FA),
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
                                                     ),
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -243,30 +286,49 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                                       DataCell(
                                                         InkWell(
                                                           child: Text(
-                                                            _asCellText(student['username']),
+                                                            _asCellText(
+                                                              student['username'],
+                                                            ),
                                                             maxLines: 2,
-                                                            overflow: TextOverflow.ellipsis,
-                                                            style: TextStyle(color: Colors.black),
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.black,
+                                                            ),
                                                           ),
                                                           onTap: () {
-                                                            context.go('/student-management/${student['id']}');
-                                                          }
+                                                            context.go(
+                                                              '/student-management/${student['id']}',
+                                                            );
+                                                          },
                                                         ),
                                                       ),
                                                       DataCell(
                                                         Text(
-                                                          _asCellText('${student['lastName']} ${student['firstName']}'),
+                                                          _asCellText(
+                                                            '${student['lastName']} ${student['firstName']}',
+                                                          ),
                                                           maxLines: 2,
-                                                          overflow: TextOverflow.ellipsis,
-                                                          style: TextStyle(color: Colors.black),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: TextStyle(
+                                                            color: Colors.black,
+                                                          ),
                                                         ),
                                                       ),
                                                       DataCell(
                                                         Text(
-                                                          _asCellText(student['dob']),
+                                                          _asCellText(
+                                                            student['dob'],
+                                                          ),
                                                           maxLines: 2,
-                                                          overflow: TextOverflow.ellipsis,
-                                                          style: TextStyle(color: Colors.black),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: TextStyle(
+                                                            color: Colors.black,
+                                                          ),
                                                         ),
                                                       ),
                                                     ],
@@ -290,7 +352,10 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                     Expanded(
                                       child: NumberPagination(
                                         onPageChanged: (value) => setState(() {
-                                          _dataFuture = _loadAllStudents(value - 1, 10);
+                                          _dataFuture = _loadAllStudents(
+                                            value - 1,
+                                            10,
+                                          );
                                           _currentPage = value;
                                         }),
                                         totalPages: totalPages,
@@ -304,7 +369,7 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                       ),
                                     ),
 
-                                    SizedBox(width: 5,),
+                                    SizedBox(width: 5),
 
                                     Text(
                                       '${(_currentPage - 1) * pageSize + 1} - ${_currentPage * pageSize > totalElements ? totalElements : _currentPage * pageSize} của $totalElements',

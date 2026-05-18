@@ -1,11 +1,15 @@
 # Miscellaneous
 *.class
+*.env
 *.lock
 *.log
 *.pyc
 *.swp
 .buildlog/
 .history
+.env
+.env.*
+!.env.example
 
 
 
@@ -117,3 +121,6 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+
+# Assets
+assets/
