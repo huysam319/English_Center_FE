@@ -24,8 +24,10 @@ class ClassWritingExerciseGradePage extends StatefulWidget {
 
 class _ClassWritingExerciseGradePageState extends State<ClassWritingExerciseGradePage> {
   late final Future<Map<String, dynamic>> _attemptsDataFuture;
+  late final Future<Map<String, dynamic>> _studentDataFuture;
 
   List<WritingExerciseGrade> grades = [];
+  int index = 0;
 
   Future<Map<String, dynamic>> _loadAttemptsData(String exerciseId) async {
     var response = await ApiService.get(
@@ -54,6 +56,42 @@ class _ClassWritingExerciseGradePageState extends State<ClassWritingExerciseGrad
       }
     }
 
+    final data = jsonDecode(response.body);
+
+    if (data['code'] == 1000 && (data['result'] as List).isNotEmpty) {
+      _studentDataFuture = _loadStudentInfo(data['result'][0]['studentId']);
+    }
+
+    return data;
+  }
+
+  Future<Map<String, dynamic>> _loadStudentInfo(String studentId) async {
+    var response = await ApiService.get(
+      '/identity/users/$studentId',
+      token: authService.accessToken,
+    );
+
+    if (response.statusCode == 401) {
+      var refreshResponse = await ApiService.post(
+        '/identity/auth/refresh',
+        body: {'token': authService.accessToken},
+      );
+
+      var refreshData = jsonDecode(refreshResponse.body);
+      if (refreshData['code'] == 1000) {
+        final newToken = refreshData['result']['token'];
+        await authService.setAuth(newToken);
+
+        response = await ApiService.get(
+          '/identity/users/$studentId',
+          token: authService.accessToken,
+        );
+      } else {
+        await authService.clearAuth();
+        throw UnauthorizedException();
+      }
+    }
+
     return jsonDecode(response.body);
   }
 
@@ -61,7 +99,7 @@ class _ClassWritingExerciseGradePageState extends State<ClassWritingExerciseGrad
   void initState() {
     super.initState();
     _attemptsDataFuture = _loadAttemptsData(widget.exerciseId);
-    // _exerciseDataFuture = _loadExerciseInfo(widget.exerciseId);
+    // _studentDataFuture = _loadStudentInfo(widget.studentId);
   }
 
   @override
@@ -75,7 +113,7 @@ class _ClassWritingExerciseGradePageState extends State<ClassWritingExerciseGrad
           return Center(child: Text('Lỗi tải dữ liệu'));
         } else if (snapshot.hasData) {
           final result = snapshot.data!['result'];
-          final attempt = result[0];
+          final attempt = result[index];
           final answers = attempt['answers'] as List;
           answers.sort((a, b) => (a['questionNumber'] as int).compareTo(b['questionNumber'] as int));
 
@@ -93,24 +131,131 @@ class _ClassWritingExerciseGradePageState extends State<ClassWritingExerciseGrad
                         padding: EdgeInsets.all(16),
                         child: Column(
                           children: [
-                            Row(
+                            Column(
                               children: [
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.arrow_circle_left_outlined,
-                                    size: 32,
-                                  ),
-                                  onPressed: () {
-                                    context.go('/classes/${widget.classId}/exercises/${widget.exerciseId}');
-                                  },
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.arrow_circle_left_outlined,
+                                        size: 32,
+                                      ),
+                                      onPressed: () {
+                                        context.go(
+                                          '/classes/${widget.classId}/exercises/${widget.exerciseId}',
+                                        );
+                                      },
+                                    ),
+                                    Text(
+                                      'Chấm điểm ${attempt['assessmentTitle']}',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  'Chấm điểm ${attempt['assessmentTitle']}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+
+                                const SizedBox(height: 16),
+
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey.shade300),
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.grey.shade50,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        onPressed: index > 0
+                                            ? () {
+                                                setState(() {
+                                                  index--;
+                                                  grades.clear();
+                                                  // _studentDataFuture = _loadStudentInfo(result[index]['studentId']);
+                                                });
+                                              }
+                                            : null,
+                                        icon: const Icon(Icons.arrow_back_ios),
+                                      ),
+
+                                      FutureBuilder(
+                                        future: _studentDataFuture, 
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return CircularProgressIndicator();
+                                          } else if (snapshot.hasError) {
+                                            return Text('Lỗi tải thông tin học viên');
+                                          } else if (snapshot.hasData) {
+                                            final student = snapshot.data!['result'];
+                                            return Column(
+                                              children: [
+                                                Text(
+                                                  (student['lastName'] != null && student['firstName'] != null)
+                                                    ? '${student['lastName']} ${student['firstName']}'
+                                                    : 'Unknown Student',
+                                                  style: const TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                ),
+
+                                                const SizedBox(height: 4),
+
+                                                Text(
+                                                  'Lần làm bài ${result[index]['attemptNo']}',
+                                                ),
+
+                                                const SizedBox(height: 4),
+
+                                                Text(
+                                                  student['email'] ?? '',
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade700,
+                                                    fontSize: 14,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                ),
+
+                                                const SizedBox(height: 4),
+
+                                                Text(
+                                                  'Bài nộp ${index + 1} / ${result.length}',
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          } else {
+                                            return Container();
+                                          }
+                                        }
+                                      ),
+
+                                      IconButton(
+                                        onPressed: index < result.length - 1
+                                            ? () {
+                                                setState(() {
+                                                  index++;
+                                                  grades.clear();
+                                                  // _studentDataFuture = _loadStudentInfo(result[index]['studentId']);
+                                                });
+                                              }
+                                            : null,
+                                        icon: const Icon(Icons.arrow_forward_ios),
+                                      ),
+                                    ],
                                   ),
                                 ),
+
+                                const SizedBox(height: 16),
                               ],
                             ),
 
@@ -118,8 +263,11 @@ class _ClassWritingExerciseGradePageState extends State<ClassWritingExerciseGrad
                               children: answers.map((attempt) {
                                 grades.add(WritingExerciseGrade());
                                 return WritingTaskGrading(
+                                  key: ValueKey(
+                                    '${result[index]['id']}-${attempt['questionNumber']}',
+                                  ),
                                   assessmentId: widget.exerciseId,
-                                  gradeModel: grades.last,
+                                  gradeModel: grades[attempt['questionNumber'] - 1],
                                   answerData: attempt,
                                 );
                               }).toList(),

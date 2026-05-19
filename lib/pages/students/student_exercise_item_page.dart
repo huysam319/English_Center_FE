@@ -136,6 +136,26 @@ class _StudentExerciseItemPageState extends State<StudentExerciseItemPage> {
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.pop(context, false),
+                                    style: ButtonStyle(
+                                      backgroundColor: WidgetStateProperty.all(
+                                        Color(0xFFF1F3F4),
+                                      ),
+                                      foregroundColor: WidgetStateProperty.all(
+                                        Colors.black,
+                                      ),
+                                      overlayColor: WidgetStateProperty.all(
+                                        Colors.transparent,
+                                      ),
+                                      minimumSize: WidgetStateProperty.all(
+                                        Size(75, 35),
+                                      ),
+                                      elevation: WidgetStateProperty.all(0),
+                                      shape: WidgetStateProperty.all(
+                                        RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                      ),
+                                    ),
                                     child: Text("Hủy"),
                                   ),
                                   ElevatedButton(
@@ -192,14 +212,32 @@ class _StudentExerciseItemPageState extends State<StudentExerciseItemPage> {
                                         );
                                       }
                                     },
+                                    style: ButtonStyle(
+                                      backgroundColor: WidgetStateProperty.all(
+                                        Color(0xFF1E40AF),
+                                      ),
+                                      foregroundColor: WidgetStateProperty.all(
+                                        Colors.white,
+                                      ),
+                                      overlayColor: WidgetStateProperty.all(
+                                        Colors.transparent,
+                                      ),
+                                      minimumSize: WidgetStateProperty.all(
+                                        Size(75, 35),
+                                      ),
+                                      elevation: WidgetStateProperty.all(0),
+                                      shape: WidgetStateProperty.all(
+                                        RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                      ),
+                                    ),
                                     child: Text("Bắt đầu"),
                                   ),
                                 ],
                               );
                             },
                           );
-                          // Tạo attempt mới và chuyển sang trang làm bài tập
-                          // Cần lấy attemptId từ API trả về sau khi tạo attempt
                         },
                         style: ButtonStyle(
                           backgroundColor: WidgetStateProperty.all(

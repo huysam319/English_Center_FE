@@ -165,7 +165,14 @@ class _TeacherClassExercisesPageState extends State<TeacherClassExercisesPage> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  subtitle: Text('Loại: ${exercise['type'] ?? 'EXERCISE'}'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Loại: ${exercise['type'] ?? 'EXERCISE'}'),
+                      if (exercise['skill'] != null)
+                        Text('Kỹ năng: ${exercise['skill']}'),
+                    ],
+                  ),
                   trailing: Icon(Icons.chevron_right),
                   onTap: id.isEmpty
                       ? null

@@ -28,6 +28,7 @@ import '../pages/side_menu/teachers/classes_page.dart';
 import '../pages/side_menu/teachers/exercises_page.dart';
 import '../pages/side_menu/teachers/questions_page.dart';
 import '../pages/students/flashcard_set_page.dart';
+import '../pages/students/learning_profile_page.dart';
 import '../pages/students/learning_support_quiz_page.dart';
 import '../pages/students/student_exercise_item_page.dart';
 import '../pages/students/student_exercise_submission_page.dart';
@@ -168,6 +169,10 @@ final GoRouter appRouter = GoRouter(
       path: '/learning-support/quiz',
       pageBuilder: (context, state) =>
           MaterialPage(child: LearningSupportQuizPage()),
+    ),
+    GoRoute(
+      path: '/learning-profile',
+      pageBuilder: (context, state) => MaterialPage(child: LearningProfilePage()),
     ),
     GoRoute(
       path: '/exercises',

@@ -55,6 +55,34 @@ class _ProfilePageState extends State<ProfilePage> {
     _dataFuture = _loadUserProfile();
   }
 
+  ButtonStyle _tabStyle(bool active) {
+    return ButtonStyle(
+      backgroundColor: WidgetStateProperty.all(
+        active ? Color(0xFF1E40AF) : Color(0xFFF1F3F4),
+      ),
+      foregroundColor: WidgetStateProperty.all(
+        active ? Colors.white : Color(0xFF1E40AF),
+      ),
+      overlayColor: WidgetStateProperty.all(Colors.transparent),
+      minimumSize: WidgetStateProperty.all(Size(150, 50)),
+      elevation: WidgetStateProperty.all(0),
+      shape: WidgetStateProperty.all(
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
+    );
+  }
+
+  Widget tab(String label, String path, {bool active = false}) {
+    return Padding(
+      padding: EdgeInsets.only(right: 2),
+      child: ElevatedButton(
+        onPressed: () => context.go(path),
+        style: _tabStyle(active),
+        child: Text(label),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Title(
@@ -81,10 +109,20 @@ class _ProfilePageState extends State<ProfilePage> {
             }
             final data = snapshot.data!;
             return Container(
-              color: Color(0xFFF1F3F4),
+              color: Colors.white,
               padding: EdgeInsets.all(50),
               child: Column(
                 children: [
+                  if ((data['result']['roles'] as List).any((role) => role['name'] == 'STUDENT'))
+                    Row(
+                      children: [
+                        tab('Thông tin cá nhân', '/profile', active: true),
+                        tab('Hồ sơ học viên', '/learning-profile'),
+                      ],
+                    ),
+                  
+                  SizedBox(height: 30,),
+
                   Row(
                     children: [
                       SizedBox(width: 150, child: Text("Tên đăng nhập:")),

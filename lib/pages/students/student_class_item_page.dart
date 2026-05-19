@@ -171,14 +171,22 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
                       physics: NeverScrollableScrollPhysics(),
                       itemBuilder: (context, index) => Container(
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black),
-                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Color(0xFFE0E0E0)),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: ListTile(
                           title: Text(
                             exercises[index]['title']?.toString() ?? '',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Loại: ${exercises[index]['type'] ?? 'EXERCISE'}'),
+                              if (exercises[index]['skill'] != null)
+                                Text('Kỹ năng: ${exercises[index]['skill']}'),
+                            ],
                           ),
                           onTap: () {
                             context.go('/exercise/${exercises[index]['id']}');
