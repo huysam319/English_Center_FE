@@ -4,6 +4,7 @@ import 'package:english_center_fe/widgets/layout/layout.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../constants/days_list.dart';
 import '../../../exceptions/unauthorized_exception.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
@@ -29,7 +30,7 @@ class _ClassPageState extends State<ClassPage> {
       '/identity/courses/student/me',
       token: authService.accessToken,
     );
-    
+
     if (response.statusCode == 401) {
       var refreshResponse = await ApiService.post(
         '/identity/auth/refresh',
@@ -52,6 +53,22 @@ class _ClassPageState extends State<ClassPage> {
     }
 
     return jsonDecode(response.body);
+  }
+
+  String _shortTime(dynamic value) {
+    final text = value?.toString() ?? '';
+    return text.length >= 5 ? text.substring(0, 5) : text;
+  }
+
+  String _sessionSummary(Object? value) {
+    if (value is! List || value.isEmpty) return 'Chưa có buổi học';
+    return value
+        .whereType<Map>()
+        .map((session) {
+          final day = getDayShortName(session['daysOfWeek']?.toString() ?? '');
+          return '$day ${_shortTime(session['startTime'])} - ${_shortTime(session['endTime'])}';
+        })
+        .join(', ');
   }
 
   @override
@@ -81,9 +98,7 @@ class _ClassPageState extends State<ClassPage> {
                           });
                           return SizedBox.shrink();
                         }
-                        return Center(
-                          child: Text('Lỗi tải thông tin lớp học'),
-                        );
+                        return Center(child: Text('Lỗi tải thông tin lớp học'));
                       } else if (snapshot.hasData) {
                         final result = snapshot.data!['result'];
                         if (result is! List) {
@@ -100,18 +115,17 @@ class _ClassPageState extends State<ClassPage> {
                             .toList();
 
                         if (classes.isEmpty) {
-                          return Center(
-                            child: Text('Chưa có lớp học nào'),
-                          );
+                          return Center(child: Text('Chưa có lớp học nào'));
                         }
 
                         return GridView.builder(
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 1.5,
-                          ),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 1.35,
+                              ),
                           itemCount: classes.length,
                           itemBuilder: (context, index) {
                             final classItem = classes[index];
@@ -145,7 +159,8 @@ class _ClassPageState extends State<ClassPage> {
                                     Padding(
                                       padding: EdgeInsets.all(12),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             classItem['name'] ?? '',
@@ -153,6 +168,20 @@ class _ClassPageState extends State<ClassPage> {
                                               color: Colors.black,
                                               fontSize: 14,
                                               fontWeight: FontWeight.w500,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          SizedBox(height: 6),
+                                          Text(
+                                            'GV: ${classItem['teacherName'] ?? '-'}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          SizedBox(height: 4),
+                                          Text(
+                                            _sessionSummary(
+                                              classItem['classSessions'],
                                             ),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,

@@ -24,18 +24,12 @@ class _LearningSupportPageState extends State<LearningSupportPage> {
             children: [
               Text(
                 'Bạn đang cần hỗ trợ gì?',
-                style: TextStyle(
-                  fontSize: 20, 
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 10),
               Text(
                 'Nếu bạn gặp khó khăn trong việc khắc phục các lỗi sai trong quá trình học tập, chúng tôi sẵn sàng hỗ trợ bạn.',
-                style: TextStyle(
-                  fontSize: 16, 
-                  fontStyle: FontStyle.italic,
-                ),
+                style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
               ),
 
               SizedBox(height: 20),
@@ -107,20 +101,12 @@ class _LearningSupportPageState extends State<LearningSupportPage> {
                       );
                     },
                   );
-                }, 
+                },
                 style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.all(
-                    Color(0xFF1E40AF),
-                  ),
-                  foregroundColor: WidgetStateProperty.all(
-                    Colors.white,
-                  ),
-                  overlayColor: WidgetStateProperty.all(
-                    Colors.transparent,
-                  ),
-                  minimumSize: WidgetStateProperty.all(
-                    Size(150, 50),
-                  ),
+                  backgroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                  foregroundColor: WidgetStateProperty.all(Colors.white),
+                  overlayColor: WidgetStateProperty.all(Colors.transparent),
+                  minimumSize: WidgetStateProperty.all(Size(150, 50)),
                   elevation: WidgetStateProperty.all(0),
                   shape: WidgetStateProperty.all(
                     RoundedRectangleBorder(
@@ -129,6 +115,25 @@ class _LearningSupportPageState extends State<LearningSupportPage> {
                   ),
                 ),
                 child: Text('Tạo quiz ôn tập'),
+              ),
+
+              SizedBox(height: 12),
+
+              OutlinedButton.icon(
+                onPressed: () {
+                  context.go('/notification');
+                },
+                icon: Icon(Icons.support_agent_outlined),
+                label: Text('Gửi ticket cho admin'),
+                style: ButtonStyle(
+                  foregroundColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+                  minimumSize: WidgetStateProperty.all(Size(150, 50)),
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

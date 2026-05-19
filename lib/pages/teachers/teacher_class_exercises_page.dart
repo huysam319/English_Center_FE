@@ -34,6 +34,9 @@ class _TeacherClassExercisesPageState extends State<TeacherClassExercisesPage> {
     final exerciseData = await _getWithRefresh(
       '/identity/assessments/class/${widget.classId}',
     );
+    final aiData = await _getWithRefresh(
+      '/identity/ai-reading-assignments/teacher',
+    );
 
     final exercisesResult = exerciseData['result'];
     final exercises = exercisesResult is List
@@ -42,10 +45,28 @@ class _TeacherClassExercisesPageState extends State<TeacherClassExercisesPage> {
               .map((item) => item.map((key, value) => MapEntry('$key', value)))
               .toList()
         : <Map<String, dynamic>>[];
+    final aiResult = aiData['result'];
+    final aiAssignments = aiResult is List
+        ? aiResult
+              .whereType<Map>()
+              .map((item) => item.map((key, value) => MapEntry('$key', value)))
+              .where((item) => item['classId']?.toString() == widget.classId)
+              .toList()
+        : <Map<String, dynamic>>[];
+    final aiSubmissions = <String, List<Map<String, dynamic>>>{};
+    await Future.wait(
+      aiAssignments.map((assignment) async {
+        final id = assignment['id']?.toString();
+        if (id == null) return;
+        aiSubmissions[id] = await _loadAiSubmissions(id);
+      }),
+    );
 
     return {
       'class': classData['result'] ?? <String, dynamic>{},
       'exercises': exercises,
+      'aiAssignments': aiAssignments,
+      'aiSubmissions': aiSubmissions,
     };
   }
 
@@ -66,6 +87,20 @@ class _TeacherClassExercisesPageState extends State<TeacherClassExercisesPage> {
       }
     }
     return jsonDecode(response.body);
+  }
+
+  Future<List<Map<String, dynamic>>> _loadAiSubmissions(
+    String assignmentId,
+  ) async {
+    final data = await _getWithRefresh(
+      '/identity/ai-reading-assignments/$assignmentId/submissions',
+    );
+    final result = data['result'];
+    if (result is! List) return <Map<String, dynamic>>[];
+    return result
+        .whereType<Map>()
+        .map((item) => item.map((key, value) => MapEntry('$key', value)))
+        .toList();
   }
 
   ButtonStyle _tabStyle(bool active) {
@@ -108,7 +143,11 @@ class _TeacherClassExercisesPageState extends State<TeacherClassExercisesPage> {
     );
   }
 
-  Widget _buildContent(List<Map<String, dynamic>> exercises) {
+  Widget _buildContent(
+    List<Map<String, dynamic>> exercises,
+    List<Map<String, dynamic>> aiAssignments,
+    Map<String, List<Map<String, dynamic>>> aiSubmissions,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -176,6 +215,93 @@ class _TeacherClassExercisesPageState extends State<TeacherClassExercisesPage> {
               );
             },
           ),
+        SizedBox(height: 24),
+        Row(
+          children: [
+            Text(
+              'Bài đọc AI đã giao',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            Spacer(),
+            TextButton.icon(
+              onPressed: () =>
+                  context.go('/classes/${widget.classId}/ai-reading'),
+              icon: Icon(Icons.visibility_outlined),
+              label: Text('Xem chi tiết'),
+            ),
+          ],
+        ),
+        SizedBox(height: 10),
+        if (aiAssignments.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              border: Border.all(color: Color(0xFFE0E0E0)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text('Chưa có bài đọc AI nào'),
+          )
+        else
+          ...aiAssignments.map((assignment) {
+            final id = assignment['id']?.toString() ?? '';
+            final submissions = aiSubmissions[id] ?? <Map<String, dynamic>>[];
+            return Container(
+              margin: EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                border: Border.all(color: Color(0xFFE0E0E0)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ExpansionTile(
+                title: Text(
+                  assignment['title']?.toString() ?? '',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  'Bài nộp: ${submissions.length} - Đã chấm: ${submissions.where((s) => s['score'] != null).length}',
+                ),
+                childrenPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                children: [
+                  if (submissions.isEmpty)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Chưa có học viên nộp bài'),
+                    )
+                  else
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        columns: const [
+                          DataColumn(label: Text('Học viên')),
+                          DataColumn(label: Text('Tên đăng nhập')),
+                          DataColumn(label: Text('Điểm')),
+                          DataColumn(label: Text('Trạng thái')),
+                        ],
+                        rows: submissions.map((submission) {
+                          final name =
+                              '${submission['lastName'] ?? ''} ${submission['firstName'] ?? ''}'
+                                  .trim();
+                          return DataRow(
+                            cells: [
+                              DataCell(Text(name)),
+                              DataCell(
+                                Text(submission['username']?.toString() ?? ''),
+                              ),
+                              DataCell(
+                                Text(submission['score']?.toString() ?? '-'),
+                              ),
+                              DataCell(
+                                Text(submission['status']?.toString() ?? '-'),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }),
       ],
     );
   }
@@ -200,6 +326,17 @@ class _TeacherClassExercisesPageState extends State<TeacherClassExercisesPage> {
                   .whereType<Map<String, dynamic>>()
                   .toList()
             : <Map<String, dynamic>>[];
+        final aiAssignments = snapshot.data?['aiAssignments'] is List
+            ? (snapshot.data!['aiAssignments'] as List)
+                  .whereType<Map<String, dynamic>>()
+                  .toList()
+            : <Map<String, dynamic>>[];
+        final aiSubmissions =
+            snapshot.data?['aiSubmissions']
+                is Map<String, List<Map<String, dynamic>>>
+            ? snapshot.data!['aiSubmissions']
+                  as Map<String, List<Map<String, dynamic>>>
+            : <String, List<Map<String, dynamic>>>{};
 
         return Title(
           color: Colors.black,
@@ -231,7 +368,7 @@ class _TeacherClassExercisesPageState extends State<TeacherClassExercisesPage> {
                     else if (snapshot.hasError)
                       Center(child: Text('Lỗi tải danh sách bài tập'))
                     else
-                      _buildContent(exercises),
+                      _buildContent(exercises, aiAssignments, aiSubmissions),
                   ],
                 ),
               ),

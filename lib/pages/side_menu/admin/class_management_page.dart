@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:number_pagination/number_pagination.dart';
 
+import '../../../constants/days_list.dart';
 import '../../../exceptions/unauthorized_exception.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
@@ -62,6 +63,19 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
     return jsonEncode(value);
   }
 
+  static String _sessionSummary(Object? value) {
+    if (value is! List || value.isEmpty) return '';
+    return value
+        .whereType<Map>()
+        .map((session) {
+          final day = getDayShortName(session['daysOfWeek']?.toString() ?? '');
+          final start = _asCellText(session['startTime']);
+          final end = _asCellText(session['endTime']);
+          return '$day $start - $end'.trim();
+        })
+        .join(', ');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -82,7 +96,7 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
       title: "Quản lý lớp học",
       child: SiteLayout(
         menuNo: 14,
-        content: SelectionArea( 
+        content: SelectionArea(
           child: Container(
             color: Colors.white,
             child: Padding(
@@ -100,7 +114,9 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                           backgroundColor: WidgetStateProperty.all(
                             Color(0xFF1E40AF),
                           ),
-                          foregroundColor: WidgetStateProperty.all(Colors.white),
+                          foregroundColor: WidgetStateProperty.all(
+                            Colors.white,
+                          ),
                           overlayColor: WidgetStateProperty.all(
                             Colors.transparent,
                           ),
@@ -127,7 +143,8 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                     child: FutureBuilder<Map<String, dynamic>>(
                       future: _dataFuture,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
                           final err = snapshot.error;
@@ -151,14 +168,13 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                           final classes = result
                               .whereType<Map>()
                               .map(
-                                (e) => e.map((k, v) => MapEntry(k.toString(), v)),
+                                (e) =>
+                                    e.map((k, v) => MapEntry(k.toString(), v)),
                               )
                               .toList();
 
                           if (classes.isEmpty) {
-                            return Center(
-                              child: Text('Chưa có lớp học nào'),
-                            );
+                            return Center(child: Text('Chưa có lớp học nào'));
                           }
 
                           return Column(
@@ -177,19 +193,23 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                                         thumbVisibility: true,
                                         interactive: true,
                                         notificationPredicate: (notification) =>
-                                            notification.metrics.axis == Axis.horizontal,
-                                        scrollbarOrientation: ScrollbarOrientation.bottom,
+                                            notification.metrics.axis ==
+                                            Axis.horizontal,
+                                        scrollbarOrientation:
+                                            ScrollbarOrientation.bottom,
                                         child: SingleChildScrollView(
                                           controller: _horizontalController,
                                           scrollDirection: Axis.horizontal,
                                           child: ConstrainedBox(
                                             constraints: BoxConstraints(
-                                              minWidth: constraints.maxWidth - 32,
+                                              minWidth:
+                                                  constraints.maxWidth - 32,
                                             ),
                                             child: DataTable(
-                                              headingRowColor: WidgetStateProperty.all(
-                                                Color(0xFF1E40AF),
-                                              ),
+                                              headingRowColor:
+                                                  WidgetStateProperty.all(
+                                                    Color(0xFF1E40AF),
+                                                  ),
                                               headingRowHeight: 45,
                                               dataRowMinHeight: 40,
                                               dataRowMaxHeight: 40,
@@ -198,11 +218,14 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                                                   label: DefaultTextStyle.merge(
                                                     child: Text(
                                                       "Tên lớp",
-                                                      selectionColor: Color(0xFF60A5FA),
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
                                                     ),
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -210,11 +233,14 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                                                   label: DefaultTextStyle.merge(
                                                     child: Text(
                                                       "Ngày bắt đầu",
-                                                      selectionColor: Color(0xFF60A5FA),
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
                                                     ),
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -222,11 +248,14 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                                                   label: DefaultTextStyle.merge(
                                                     child: Text(
                                                       "Ngày kết thúc",
-                                                      selectionColor: Color(0xFF60A5FA),
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
                                                     ),
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -234,54 +263,126 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                                                   label: DefaultTextStyle.merge(
                                                     child: Text(
                                                       "Số lượng học viên",
-                                                      selectionColor: Color(0xFF60A5FA),
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
                                                     ),
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                DataColumn(
+                                                  label: DefaultTextStyle.merge(
+                                                    child: Text(
+                                                      "Giáo viên",
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
+                                                    ),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                DataColumn(
+                                                  label: DefaultTextStyle.merge(
+                                                    child: Text(
+                                                      "Buổi học",
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
+                                                    ),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
                                               ],
                                               rows: [
                                                 for (final classItem in classes)
-                                                DataRow(
-                                                  cells: [
-                                                    DataCell(
-                                                      InkWell(
-                                                        child: Text(
-                                                          _asCellText(classItem['name']),
-                                                          maxLines: 2,
-                                                          overflow: TextOverflow.ellipsis,
+                                                  DataRow(
+                                                    cells: [
+                                                      DataCell(
+                                                        InkWell(
+                                                          child: Text(
+                                                            _asCellText(
+                                                              classItem['name'],
+                                                            ),
+                                                            maxLines: 2,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                          onTap: () {
+                                                            context.go(
+                                                              '/class-management/${classItem['id']}',
+                                                            );
+                                                          },
                                                         ),
-                                                        onTap: () {
-                                                          context.go('/class-management/${classItem['id']}');
-                                                        },
                                                       ),
-                                                    ),
-                                                    DataCell(
-                                                      Text(
-                                                        _asCellText(classItem['startDate']),
-                                                        maxLines: 2,
-                                                        overflow: TextOverflow.ellipsis,
+                                                      DataCell(
+                                                        Text(
+                                                          _asCellText(
+                                                            classItem['startDate'],
+                                                          ),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
                                                       ),
-                                                    ),
-                                                    DataCell(
-                                                      Text(
-                                                        _asCellText(classItem['endDate']),
-                                                        maxLines: 2,
-                                                        overflow: TextOverflow.ellipsis,
+                                                      DataCell(
+                                                        Text(
+                                                          _asCellText(
+                                                            classItem['endDate'],
+                                                          ),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
                                                       ),
-                                                    ),
-                                                    DataCell(
-                                                      Text(
-                                                        _asCellText(classItem['numberOfStudents']),
-                                                        maxLines: 2,
-                                                        overflow: TextOverflow.ellipsis,
+                                                      DataCell(
+                                                        Text(
+                                                          _asCellText(
+                                                            classItem['numberOfStudents'],
+                                                          ),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
                                                       ),
-                                                    ),
-                                                  ],
-                                                ),
+                                                      DataCell(
+                                                        Text(
+                                                          _asCellText(
+                                                            classItem['teacherName'],
+                                                          ),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        SizedBox(
+                                                          width: 320,
+                                                          child: Text(
+                                                            _sessionSummary(
+                                                              classItem['classSessions'],
+                                                            ),
+                                                            maxLines: 3,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                               ],
                                             ),
                                           ),
@@ -301,10 +402,18 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                                     Expanded(
                                       child: NumberPagination(
                                         onPageChanged: (value) => setState(() {
-                                          _dataFuture = _loadAllClasses(value - 1, 10);
+                                          _dataFuture = _loadAllClasses(
+                                            value - 1,
+                                            10,
+                                          );
                                           _currentPage = value;
                                         }),
-                                        totalPages: (snapshot.data!['result']['totalElements'] / snapshot.data!['result']['size'] as double).ceil(),
+                                        totalPages:
+                                            (snapshot.data!['result']['totalElements'] /
+                                                        snapshot
+                                                            .data!['result']['size']
+                                                    as double)
+                                                .ceil(),
                                         currentPage: _currentPage,
                                         visiblePagesCount: 10,
                                         buttonElevation: 0,
@@ -315,7 +424,7 @@ class _ClassManagementPageState extends State<ClassManagementPage> {
                                       ),
                                     ),
 
-                                    SizedBox(width: 5,),
+                                    SizedBox(width: 5),
 
                                     Text(
                                       '${(_currentPage - 1) * 10 + 1} - ${_currentPage * 10 > snapshot.data!['result']['totalElements'] ? snapshot.data!['result']['totalElements'] : _currentPage * 10} của ${snapshot.data!['result']['totalElements']}',

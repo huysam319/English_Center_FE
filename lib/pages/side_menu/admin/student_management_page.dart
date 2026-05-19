@@ -278,6 +278,21 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                                     ),
                                                   ),
                                                 ),
+                                                DataColumn(
+                                                  label: DefaultTextStyle.merge(
+                                                    child: Text(
+                                                      "Thao tác",
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
+                                                    ),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
                                               ],
                                               rows: [
                                                 for (final student in students)
@@ -329,6 +344,21 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                                                           style: TextStyle(
                                                             color: Colors.black,
                                                           ),
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        IconButton(
+                                                          tooltip:
+                                                              'Sửa / xóa học viên',
+                                                          icon: Icon(
+                                                            Icons.edit_outlined,
+                                                            size: 20,
+                                                          ),
+                                                          onPressed: () {
+                                                            context.go(
+                                                              '/student-management/${student['id']}',
+                                                            );
+                                                          },
                                                         ),
                                                       ),
                                                     ],

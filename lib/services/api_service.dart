@@ -35,6 +35,10 @@ class ApiService {
     );
   }
 
+  static Future<http.Response> delete(String path, {String? token}) {
+    return http.delete(Uri.parse('$baseUrl$path'), headers: _headers(token));
+  }
+
   static Map<String, String> _headers(String? token) {
     return {
       'Content-Type': 'application/json',

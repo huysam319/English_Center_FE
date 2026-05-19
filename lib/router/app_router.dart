@@ -12,6 +12,7 @@ import '../pages/admin/teacher_management/teacher_detail_page.dart';
 import '../pages/authentication/authentication_page.dart';
 import '../pages/authentication/login_page.dart';
 import '../pages/authentication/update_account_page.dart';
+import '../pages/side_menu/admin/admin_notifications_page.dart';
 import '../pages/side_menu/admin/class_management_page.dart';
 import '../pages/side_menu/admin/student_management_page.dart';
 import '../pages/side_menu/admin/teacher_management_page.dart';
@@ -84,6 +85,11 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/notification',
       pageBuilder: (context, state) => MaterialPage(child: NotificationPage()),
+    ),
+    GoRoute(
+      path: '/admin-notifications',
+      pageBuilder: (context, state) =>
+          MaterialPage(child: AdminNotificationsPage()),
     ),
     GoRoute(
       path: '/class',
