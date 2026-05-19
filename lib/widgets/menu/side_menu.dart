@@ -214,6 +214,17 @@ class SideMenu extends StatelessWidget {
               SizedBox(height: 5),
 
               SingleMenuButton(
+                icon: Icons.notifications_outlined,
+                label: "Thông báo",
+                func: () {
+                  context.go("/admin-notifications");
+                },
+                isActive: (order == 17) ? true : false,
+              ),
+
+              SizedBox(height: 5),
+
+              SingleMenuButton(
                 icon: Icons.class_outlined,
                 label: "Quản lý lớp học",
                 func: () {

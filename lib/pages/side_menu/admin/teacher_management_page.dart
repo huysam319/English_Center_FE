@@ -273,6 +273,21 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                                     ),
                                                   ),
                                                 ),
+                                                DataColumn(
+                                                  label: DefaultTextStyle.merge(
+                                                    child: Text(
+                                                      "Thao tác",
+                                                      selectionColor: Color(
+                                                        0xFF60A5FA,
+                                                      ),
+                                                    ),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
                                               ],
                                               rows: [
                                                 for (final teacher in teachers)
@@ -314,6 +329,21 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
                                                           maxLines: 2,
                                                           overflow: TextOverflow
                                                               .ellipsis,
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        IconButton(
+                                                          tooltip:
+                                                              'Sửa thông tin / đổi mật khẩu',
+                                                          icon: Icon(
+                                                            Icons.edit_outlined,
+                                                            size: 20,
+                                                          ),
+                                                          onPressed: () {
+                                                            context.go(
+                                                              '/teacher-management/${teacher['id']}',
+                                                            );
+                                                          },
                                                         ),
                                                       ),
                                                     ],

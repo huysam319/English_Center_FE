@@ -44,6 +44,44 @@ class _TeacherClassAttendancesPageState
   void initState() {
     super.initState();
     _classDataFuture = _loadClassInfo(widget.classId);
+    _selectTodaySession();
+  }
+
+  String _todayDayId() {
+    const dayIds = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    return dayIds[DateTime.now().weekday - 1];
+  }
+
+  String _todayText() {
+    final now = DateTime.now();
+    return '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
+  }
+
+  Future<void> _selectTodaySession() async {
+    final sessions = await _loadAllClassSessions(widget.classId, '', 0, 100);
+    if (!mounted || sessions.isEmpty) return;
+    final today = _todayDayId();
+    final selected = sessions.firstWhere(
+      (session) => session['daysOfWeek']?.toString() == today,
+      orElse: () => sessions.first,
+    );
+    setState(() {
+      _selectedClassSession = selected;
+      _selectedClassSessionId = selected['id']?.toString();
+      if (_selectedClassSessionId != null) {
+        _studentsDataFuture = _loadStudentsByClassSessionId(
+          _selectedClassSessionId!,
+        );
+      }
+    });
   }
 
   Future<Map<String, dynamic>> _loadClassInfo(String id) async {
@@ -184,6 +222,16 @@ class _TeacherClassAttendancesPageState
             key: _formKey,
             child: Column(
               children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 50, bottom: 12),
+                    child: Text(
+                      'Ngày điểm danh: ${_todayText()}',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
                 Padding(
                   padding: EdgeInsets.only(left: 50, right: 50),
                   child: Row(

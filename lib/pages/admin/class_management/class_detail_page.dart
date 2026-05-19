@@ -18,392 +18,400 @@ class ClassDetailPage extends StatefulWidget {
   State<ClassDetailPage> createState() => _ClassDetailPageState();
 }
 
-Future<Map<String, dynamic>> _loadClassInfo(String id) async {
-  var response = await ApiService.get(
-    '/identity/courses/$id',
-    token: authService.accessToken,
-  );
-  
-  if (response.statusCode == 401) {
-    var refreshResponse = await ApiService.post(
-      '/identity/auth/refresh',
-      body: {'token': authService.accessToken},
-    );
-
-    var refreshData = jsonDecode(refreshResponse.body);
-    if (refreshData['code'] == 1000) {
-      final newToken = refreshData['result']['token'];
-      await authService.setAuth(newToken);
-
-      response = await ApiService.get(
-        '/identity/courses/$id',
-        token: authService.accessToken,
-      );
-    } else {
-      await authService.clearAuth();
-      throw UnauthorizedException();
-    }
-  }
-
-  return jsonDecode(response.body);
-}
-
-Future<Map<String, dynamic>> _loadClassSessions(String classId, int page, int size) async {
-  var response = await ApiService.get(
-    '/identity/class_sessions/allclasssessions/$classId?page=$page&size=$size',
-    token: authService.accessToken,
-  );
-  
-  if (response.statusCode == 401) {
-    var refreshResponse = await ApiService.post(
-      '/identity/auth/refresh',
-      body: {'token': authService.accessToken},
-    );
-
-    var refreshData = jsonDecode(refreshResponse.body);
-    if (refreshData['code'] == 1000) {
-      final newToken = refreshData['result']['token'];
-      await authService.setAuth(newToken);
-
-      response = await ApiService.get(
-        '/identity/class_sessions/allclasssessions/$classId?page=$page&size=$size',
-        token: authService.accessToken,
-      );
-    } else {
-      await authService.clearAuth();
-      throw UnauthorizedException();
-    }
-  }
-
-  return jsonDecode(response.body);
-}
-
 class _ClassDetailPageState extends State<ClassDetailPage> {
-  late final Future<Map<String, dynamic>> _classDataFuture;
-  late final Future<Map<String, dynamic>> _classSessionsFuture;
-
-  final ScrollController _verticalController = ScrollController();
-  final ScrollController _horizontalController = ScrollController();
-
-  static String _asCellText(Object? value) {
-    if (value == null) return '';
-    if (value is String) return value;
-    if (value is num || value is bool) return value.toString();
-    if (value is DateTime) return value.toIso8601String();
-    return jsonEncode(value);
-  }
+  late Future<Map<String, dynamic>> _dataFuture;
+  final _studentUsernameController = TextEditingController();
+  bool _addingStudent = false;
 
   @override
   void initState() {
     super.initState();
-    _classDataFuture = _loadClassInfo(widget.classId);
-    _classSessionsFuture = _loadClassSessions(widget.classId, 0, 10);
+    _dataFuture = _loadData();
+  }
+
+  @override
+  void dispose() {
+    _studentUsernameController.dispose();
+    super.dispose();
+  }
+
+  Future<Map<String, dynamic>> _loadData() async {
+    final classData = await _getWithRefresh(
+      '/identity/courses/${widget.classId}',
+    );
+    final sessionsData = await _getWithRefresh(
+      '/identity/class_sessions/allclasssessions/${widget.classId}?page=0&size=100',
+    );
+    final studentsData = await _getWithRefresh(
+      '/identity/enrolls/${widget.classId}',
+    );
+
+    return {
+      'class': classData['result'] ?? <String, dynamic>{},
+      'sessions': _contentList(sessionsData),
+      'students': _resultList(studentsData),
+    };
+  }
+
+  List<Map<String, dynamic>> _contentList(Map<String, dynamic> data) {
+    final raw = data['result'] is Map ? data['result']['content'] : null;
+    if (raw is! List) return <Map<String, dynamic>>[];
+    return raw
+        .whereType<Map>()
+        .map((item) => item.map((key, value) => MapEntry('$key', value)))
+        .toList();
+  }
+
+  List<Map<String, dynamic>> _resultList(Map<String, dynamic> data) {
+    final raw = data['result'];
+    if (raw is! List) return <Map<String, dynamic>>[];
+    return raw
+        .whereType<Map>()
+        .map((item) => item.map((key, value) => MapEntry('$key', value)))
+        .toList();
+  }
+
+  Future<Map<String, dynamic>> _getWithRefresh(String path) async {
+    var response = await ApiService.get(path, token: authService.accessToken);
+    if (response.statusCode == 401) {
+      final refreshResponse = await ApiService.post(
+        '/identity/auth/refresh',
+        body: {'token': authService.accessToken},
+      );
+      final refreshData = jsonDecode(refreshResponse.body);
+      if (refreshData['code'] == 1000) {
+        await authService.setAuth(refreshData['result']['token']);
+        response = await ApiService.get(path, token: authService.accessToken);
+      } else {
+        await authService.clearAuth();
+        throw UnauthorizedException();
+      }
+    }
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> _postWithRefresh(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    var response = await ApiService.post(
+      path,
+      token: authService.accessToken,
+      body: body,
+    );
+    if (response.statusCode == 401) {
+      final refreshResponse = await ApiService.post(
+        '/identity/auth/refresh',
+        body: {'token': authService.accessToken},
+      );
+      final refreshData = jsonDecode(refreshResponse.body);
+      if (refreshData['code'] == 1000) {
+        await authService.setAuth(refreshData['result']['token']);
+        response = await ApiService.post(
+          path,
+          token: authService.accessToken,
+          body: body,
+        );
+      } else {
+        await authService.clearAuth();
+        throw UnauthorizedException();
+      }
+    }
+    return jsonDecode(response.body);
+  }
+
+  Future<void> _addStudentByUsername() async {
+    final username = _studentUsernameController.text.trim();
+    if (username.isEmpty) {
+      _showSnackBar('Vui lòng nhập tên đăng nhập học viên');
+      return;
+    }
+
+    setState(() => _addingStudent = true);
+    try {
+      final data = await _postWithRefresh('/identity/enrolls', {
+        'classId': widget.classId,
+        'studentUsername': username,
+      });
+      if (data['code'] == 1000) {
+        _studentUsernameController.clear();
+        _showSnackBar('Đã thêm học viên vào lớp');
+        setState(() => _dataFuture = _loadData());
+      } else {
+        _showSnackBar(data['message']?.toString() ?? 'Thêm học viên thất bại');
+      }
+    } finally {
+      if (mounted) setState(() => _addingStudent = false);
+    }
+  }
+
+  void _showSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _timeText(Map<String, dynamic> session) {
+    final day = getDayShortName(session['daysOfWeek']?.toString() ?? '');
+    return '$day ${session['startTime'] ?? ''} - ${session['endTime'] ?? ''}';
+  }
+
+  Widget _buildInfo(Map<String, dynamic> info) {
+    Widget row(String label, Object? value) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: 8),
+        child: Row(
+          children: [
+            SizedBox(width: 150, child: Text(label)),
+            Expanded(child: Text(value?.toString() ?? '')),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        row('Tên lớp', info['name']),
+        row('Giáo viên', info['teacherName']),
+        row('Ngày bắt đầu', info['startDate']),
+        row('Ngày kết thúc', info['endDate']),
+      ],
+    );
+  }
+
+  Widget _buildSessions(List<Map<String, dynamic>> sessions) {
+    if (sessions.isEmpty) {
+      return Text('Chưa có buổi học nào');
+    }
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        headingRowColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+        columns: const [
+          DataColumn(
+            label: Text(
+              'Buổi học',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'Chủ đề',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+        rows: sessions.map((session) {
+          return DataRow(
+            cells: [
+              DataCell(Text(_timeText(session))),
+              DataCell(Text(session['topic']?.toString() ?? '')),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildStudents(List<Map<String, dynamic>> students) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            SizedBox(
+              width: 360,
+              child: TextField(
+                controller: _studentUsernameController,
+                decoration: InputDecoration(
+                  labelText: 'Tên đăng nhập học viên',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 12),
+            ElevatedButton.icon(
+              onPressed: _addingStudent ? null : _addStudentByUsername,
+              icon: _addingStudent
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(Icons.person_add_alt_1_outlined),
+              label: Text('Thêm học viên'),
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+        if (students.isEmpty)
+          Text('Chưa có học viên nào')
+        else
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+              columns: const [
+                DataColumn(
+                  label: Text(
+                    'Tên đăng nhập',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Họ và tên',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'ID học viên',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+              rows: students.map((student) {
+                final name =
+                    '${student['lastName'] ?? ''} ${student['firstName'] ?? ''}'
+                        .trim();
+                return DataRow(
+                  cells: [
+                    DataCell(Text(student['username']?.toString() ?? '')),
+                    DataCell(Text(name)),
+                    DataCell(Text(student['studentId']?.toString() ?? '')),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
-      future: _classDataFuture,
+      future: _dataFuture,
       builder: (context, snapshot) {
-        Widget content = Container();
-        String className = "";
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          content = Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          final err = snapshot.error;
-          if (err is UnauthorizedException) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) context.go('/login');
-            });
-            content = SizedBox.shrink();
-          }
-          content = Center(
-            child: Text('Lỗi tải thông tin lớp học'),
-          );
-        } else if (snapshot.hasData) {
-          final result = snapshot.data!['result'];
-          className = result['name'];
-
-          content = Column(
-            children: [
-              Row(
-                children: [
-                  SizedBox(width: 150, child: Text('Tên lớp'),),
-                  Text('${result['name']}'),
-                ],
-              ),
-              Row(
-                children: [
-                  SizedBox(width: 150, child: Text('Ngày bắt đầu'),),
-                  Text('${result['startDate']}'),
-                ],
-              ),
-              Row(
-                children: [
-                  SizedBox(width: 150, child: Text('Ngày kết thúc'),),
-                  Text('${result['endDate']}'),
-                ],
-              ),
-
-              SizedBox(height: 20,),
-
-              Text(
-                'Danh sách buổi học',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 12,),
-              FutureBuilder<Map<String, dynamic>>(
-                future: _classSessionsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    final err = snapshot.error;
-                    if (err is UnauthorizedException) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) context.go('/login');
-                      });
-                      return SizedBox.shrink();
-                    }
-                    return Center(
-                      child: Text('Lỗi tải thông tin buổi học'),
-                    );
-                  } else if (snapshot.hasData) {
-                    final result = snapshot.data!['result']['content'];
-                    if (result is! List) {
-                      return Center(
-                        child: Text('Dữ liệu buổi học không hợp lệ'),
-                      );
-                    }
-
-                    final classes = result
-                        .whereType<Map>()
-                        .map(
-                          (e) => e.map((k, v) => MapEntry(k.toString(), v)),
-                        )
-                        .toList();
-
-                    if (classes.isEmpty) {
-                      return Center(
-                        child: Text('Chưa có buổi học nào'),
-                      );
-                    }
-
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Scrollbar(
-                          controller: _verticalController,
-                          thumbVisibility: true,
-                          interactive: true,
-                          child: SingleChildScrollView(
-                            controller: _verticalController,
-                            child: Scrollbar(
-                              controller: _horizontalController,
-                              thumbVisibility: true,
-                              interactive: true,
-                              notificationPredicate: (notification) =>
-                                  notification.metrics.axis == Axis.horizontal,
-                              scrollbarOrientation: ScrollbarOrientation.bottom,
-                              child: SingleChildScrollView(
-                                controller: _horizontalController,
-                                scrollDirection: Axis.horizontal,
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    minWidth: constraints.maxWidth,
-                                  ),
-                                  child: DataTable(
-                                    headingRowColor: WidgetStateProperty.all(
-                                      Color(0xFF1E40AF),
-                                    ),
-                                    headingRowHeight: 45,
-                                    dataRowMinHeight: 40,
-                                    dataRowMaxHeight: 40,
-                                    columns: [
-                                      DataColumn(
-                                        label: DefaultTextStyle.merge(
-                                          child: Text(
-                                            "Thời gian bắt đầu",
-                                            selectionColor: Color(0xFF60A5FA),
-                                          ),
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      DataColumn(
-                                        label: DefaultTextStyle.merge(
-                                          child: Text(
-                                            "Thời gian kết thúc",
-                                            selectionColor: Color(0xFF60A5FA),
-                                          ),
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      DataColumn(
-                                        label: DefaultTextStyle.merge(
-                                          child: Text(
-                                            "Ngày trong tuần",
-                                            selectionColor: Color(0xFF60A5FA),
-                                          ),
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      DataColumn(
-                                        label: DefaultTextStyle.merge(
-                                          child: Text(
-                                            "Chủ đề",
-                                            selectionColor: Color(0xFF60A5FA),
-                                          ),
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                    rows: [
-                                      for (final classItem in classes)
-                                      DataRow(
-                                        cells: [
-                                          DataCell(
-                                            Text(
-                                              _asCellText(classItem['startTime']),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          DataCell(
-                                            Text(
-                                              _asCellText(classItem['endTime']),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          DataCell(
-                                            Text(
-                                              days.firstWhere(
-                                                (d) => d['id'] == classItem['daysOfWeek'],
-                                                orElse: () => {'id': '', 'name': _asCellText(classItem['daysOfWeek'])},
-                                              )['name'] ?? '',
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          DataCell(
-                                            Text(
-                                              _asCellText(classItem['topic']),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  } else {
-                    return Center(child: Text('No data available'));
-                  }
-                },
-              ),
-            ],
-          );
+        if (snapshot.hasError && snapshot.error is UnauthorizedException) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) context.go('/login');
+          });
         }
+
+        final info = snapshot.data?['class'];
+        final classInfo = info is Map<String, dynamic>
+            ? info
+            : <String, dynamic>{};
+        final className = classInfo['name']?.toString() ?? '';
+        final sessions = snapshot.data?['sessions'] is List
+            ? (snapshot.data!['sessions'] as List)
+                  .whereType<Map<String, dynamic>>()
+                  .toList()
+            : <Map<String, dynamic>>[];
+        final students = snapshot.data?['students'] is List
+            ? (snapshot.data!['students'] as List)
+                  .whereType<Map<String, dynamic>>()
+                  .toList()
+            : <Map<String, dynamic>>[];
 
         return Title(
           color: Colors.black,
-          title: "Lớp học $className",
+          title: className.isEmpty ? 'Lớp học' : 'Lớp học $className',
           child: SiteLayout(
             menuNo: 14,
             content: SelectionArea(
               child: Container(
                 color: Colors.white,
-                child: Padding(
+                child: ListView(
                   padding: EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.arrow_circle_left_outlined, size: 32),
-                            onPressed: () {
-                              context.go('/class-management');
-                            },
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.arrow_circle_left_outlined,
+                            size: 32,
                           ),
-                          Text(
-                            "Thông tin lớp học: $className",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          onPressed: () => context.go('/class-management'),
+                        ),
+                        Text(
+                          className.isEmpty
+                              ? 'Thông tin lớp học'
+                              : 'Thông tin lớp học: $className',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
-                      ),
-
-                      Row(
-                        children: [
-                          Expanded(child: Container(),),
-                          ElevatedButton(
-                            onPressed: () {
-                              context.go('/class-management/${widget.classId}/add-class-session');
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(
-                                Color(0xFF1E40AF),
-                              ),
-                              foregroundColor: WidgetStateProperty.all(Colors.white),
-                              overlayColor: WidgetStateProperty.all(
-                                Colors.transparent,
-                              ),
-                              minimumSize: WidgetStateProperty.all(Size(150, 50)),
-                              elevation: WidgetStateProperty.all(0),
-                              shape: WidgetStateProperty.all(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.add_outlined, size: 20),
-                                SizedBox(width: 4),
-                                Text('Thêm buổi học'),
-                              ],
-                            ),
+                        ),
+                        Spacer(),
+                        ElevatedButton.icon(
+                          onPressed: () => context.go(
+                            '/class-management/${widget.classId}/add-class-session',
                           ),
-                        ],
-                      ),
-
-                      SizedBox(height: 20,),
-
+                          icon: Icon(Icons.add_outlined, size: 20),
+                          label: Text('Thêm buổi học'),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    if (snapshot.connectionState == ConnectionState.waiting)
+                      Center(child: CircularProgressIndicator())
+                    else if (snapshot.hasError)
+                      Center(child: Text('Lỗi tải thông tin lớp học'))
+                    else ...[
                       Padding(
-                        padding: EdgeInsets.fromLTRB(30, 0, 30, 0),
-                        child: content,
+                        padding: EdgeInsets.symmetric(horizontal: 30),
+                        child: _buildInfo(classInfo),
                       ),
+                      SizedBox(height: 24),
+                      Text(
+                        'Danh sách buổi học',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      _buildSessions(sessions),
+                      SizedBox(height: 24),
+                      Text(
+                        'Danh sách học viên',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      _buildStudents(students),
                     ],
-                  ),
+                  ],
                 ),
               ),
             ),
           ),
         );
-      }
+      },
     );
   }
 }
