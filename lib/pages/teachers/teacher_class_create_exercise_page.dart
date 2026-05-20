@@ -855,7 +855,7 @@ class _TeacherClassCreateExercisePageState extends State<TeacherClassCreateExerc
                                   }
                                 }
                                 else if (_selectedSkill == "Writing") {
-                                  var uri = Uri.parse("http://localhost:8080/identity/writing-assessments");
+                                  var uri = Uri.parse("${ApiService.baseUrl}/identity/writing-assessments");
                                   var request = http.MultipartRequest("POST", uri);
                                   request.headers['Authorization'] = 'Bearer ${authService.accessToken}';
                                   
