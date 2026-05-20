@@ -66,31 +66,50 @@ class _LoginPageState extends State<LoginPage> {
 
     if (_usernameError || _passwordError) return;
 
-    final response = await ApiService.post(
-      '/identity/auth/token',
-      body: {
-        'username': usernameController.text,
-        'password': passwordController.text,
-      },
-    );
-
-    final data = jsonDecode(response.body);
-
-    if (data != null && data['code'] == 1009) {
-      passwordController.clear();
-
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Tên đăng nhập hoặc mật khẩu không đúng')),
+    try {
+      final response = await ApiService.post(
+        '/identity/auth/token',
+        body: {
+          'username': usernameController.text.trim(),
+          'password': passwordController.text,
+        },
       );
-      return;
-    }
 
-    String token = data['result']['token'];
-    authService.setAuth(token);
-    
-    if (!context.mounted) return;
-    context.go('/');
+      final data = jsonDecode(response.body);
+      final result = data is Map ? data['result'] : null;
+      final token = result is Map ? result['token']?.toString() : null;
+
+      if (response.statusCode != 200 ||
+          data is! Map ||
+          data['code'] != 1000 ||
+          token == null ||
+          token.isEmpty) {
+        passwordController.clear();
+        _showError(
+          data is Map
+              ? data['message']?.toString() ?? 'Đăng nhập thất bại'
+              : 'Đăng nhập thất bại',
+        );
+        return;
+      }
+
+      await authService.setAuth(token);
+
+      if (!mounted) return;
+      context.go('/');
+    } catch (_) {
+      _showError('Không thể kết nối đến máy chủ');
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    final normalizedMessage = message == 'Invalid credentials, please try again.'
+        ? 'Tên đăng nhập hoặc mật khẩu không đúng'
+        : message;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(normalizedMessage)));
   }
 
   @override
@@ -99,15 +118,11 @@ class _LoginPageState extends State<LoginPage> {
       color: Colors.black,
       title: "Đăng nhập",
       child: Shortcuts(
-        shortcuts: {
-          LogicalKeySet(LogicalKeyboardKey.enter): ActivateIntent(),
-        },
+        shortcuts: {LogicalKeySet(LogicalKeyboardKey.enter): ActivateIntent()},
         child: Actions(
           actions: {
-            ActivateIntent: CallbackAction(
-              onInvoke: (_) => _handleLogin(),
-            ),
-          }, 
+            ActivateIntent: CallbackAction(onInvoke: (_) => _handleLogin()),
+          },
           child: Scaffold(
             backgroundColor: Color(0xFFF1F5F9),
             body: Center(
@@ -119,17 +134,18 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05,),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 20,
                       offset: Offset(0, 10),
-                    )
+                    ),
                   ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text("Đăng nhập",
+                    Text(
+                      "Đăng nhập",
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 32,
@@ -137,14 +153,14 @@ class _LoginPageState extends State<LoginPage> {
                         color: Colors.black,
                       ),
                     ),
-
-                    SizedBox(height: 24,),
-
+                    SizedBox(height: 24),
                     TextField(
                       controller: usernameController,
                       decoration: InputDecoration(
                         labelText: "Username",
-                        errorText: _usernameError ? 'Vui lòng nhập tên đăng nhập' : null,
+                        errorText: _usernameError
+                            ? 'Vui lòng nhập tên đăng nhập'
+                            : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -158,18 +174,14 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-
                     SizedBox(height: 16),
-
                     PasswordField(
-                      controller: passwordController, 
+                      controller: passwordController,
                       showError: _passwordError,
                       labelText: "Password",
                       errorText: "Vui lòng nhập mật khẩu",
                     ),
-
                     SizedBox(height: 16),
-
                     SizedBox(
                       height: 48,
                       child: ElevatedButton(
@@ -190,18 +202,13 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-
                     SizedBox(height: 20),
-
                     Stack(
                       alignment: Alignment.center,
                       children: [
-                        Divider(
-                          thickness: 1,
-                          color: Color(0xFF8E8D8D),
-                        ),
+                        Divider(thickness: 1, color: Color(0xFF8E8D8D)),
                         Container(
-                          color: Colors.white, // màu nền box
+                          color: Colors.white,
                           padding: EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
                             "Hoặc",
@@ -214,18 +221,17 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ],
                     ),
-
                     SizedBox(height: 20),
-
                     SizedBox(
                       height: 36,
                       child: ElevatedButton(
                         onPressed: () async {
-                          // Login with Google
-                          final targetUrl = '${OauthConfig.authUri}?redirect_uri=${Uri.encodeComponent(
-                            OauthConfig.redirectUri
-                          )}&response_type=code&client_id=${OauthConfig.clientId}&scope=openid%20email%20profile';
-                          if (!await launchUrl(Uri.parse(targetUrl), webOnlyWindowName: '_self')) {
+                          final targetUrl =
+                              '${OauthConfig.authUri}?redirect_uri=${Uri.encodeComponent(OauthConfig.redirectUri)}&response_type=code&client_id=${OauthConfig.clientId}&scope=openid%20email%20profile';
+                          if (!await launchUrl(
+                            Uri.parse(targetUrl),
+                            webOnlyWindowName: '_self',
+                          )) {
                             throw Exception('Could not launch $targetUrl');
                           }
                         },
@@ -234,18 +240,16 @@ class _LoginPageState extends State<LoginPage> {
                           backgroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              width: 1,
-                              color: Colors.black,
-                            )
+                            side: BorderSide(width: 1, color: Colors.black),
                           ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Image.asset("assets/icons/google.png", width: 18,),
-                            SizedBox(width: 12,),
-                            Text("Đăng nhập bằng Google",
+                            Image.asset("assets/icons/google.png", width: 18),
+                            SizedBox(width: 12),
+                            Text(
+                              "Đăng nhập bằng Google",
                               style: TextStyle(
                                 color: Colors.black,
                                 fontSize: 15,
@@ -263,7 +267,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
-      
     );
   }
 }
