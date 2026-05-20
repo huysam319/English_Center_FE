@@ -131,7 +131,7 @@ class _ClassDetailPageState extends State<ClassDetailPage> {
     try {
       final studentId = await _findStudentIdByUsername(username);
       if (studentId == null) {
-        _showSnackBar('KhÃ´ng tÃ¬m tháº¥y há»c viÃªn vá»›i tÃªn Ä‘Äƒng nháº­p nÃ y');
+        _showSnackBar('Không tìm thấy học viên với tên đăng nhập này');
         return;
       }
 
