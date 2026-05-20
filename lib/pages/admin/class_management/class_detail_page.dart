@@ -129,8 +129,15 @@ class _ClassDetailPageState extends State<ClassDetailPage> {
 
     setState(() => _addingStudent = true);
     try {
+      final studentId = await _findStudentIdByUsername(username);
+      if (studentId == null) {
+        _showSnackBar('KhÃ´ng tÃ¬m tháº¥y há»c viÃªn vá»›i tÃªn Ä‘Äƒng nháº­p nÃ y');
+        return;
+      }
+
       final data = await _postWithRefresh('/identity/enrolls', {
         'classId': widget.classId,
+        'studentId': studentId,
         'studentUsername': username,
       });
       if (data['code'] == 1000) {
@@ -143,6 +150,23 @@ class _ClassDetailPageState extends State<ClassDetailPage> {
     } finally {
       if (mounted) setState(() => _addingStudent = false);
     }
+  }
+
+  Future<String?> _findStudentIdByUsername(String username) async {
+    final data = await _getWithRefresh('/identity/users/students?page=0&size=1000');
+    final normalizedUsername = username.toLowerCase();
+    final students = _contentList(data);
+
+    for (final student in students) {
+      final candidateUsername =
+          student['username']?.toString().trim().toLowerCase();
+      if (candidateUsername == normalizedUsername) {
+        final studentId = student['id']?.toString();
+        if (studentId != null && studentId.isNotEmpty) return studentId;
+      }
+    }
+
+    return null;
   }
 
   void _showSnackBar(String message) {
