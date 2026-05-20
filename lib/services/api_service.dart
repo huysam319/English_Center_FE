@@ -5,7 +5,7 @@ import 'package:universal_html/html.dart' as html;
 class ApiService {
   static const _buildBaseUrl = String.fromEnvironment('API_BASE_URL');
   static const _fallbackBaseUrl =
-      'https://identical-size-pork-seas.trycloudflare.com';
+      'https://jeffrey-menu-seat-wonderful.trycloudflare.com';
 
   static String get baseUrl {
     final fromBuild = _normalizeBaseUrl(_buildBaseUrl);
