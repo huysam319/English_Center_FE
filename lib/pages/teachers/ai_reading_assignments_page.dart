@@ -14,9 +14,16 @@ import '../../services/auth_service.dart';
 import '../../widgets/layout/layout.dart';
 
 class AiReadingAssignmentsPage extends StatefulWidget {
-  const AiReadingAssignmentsPage({super.key, this.classId});
+  const AiReadingAssignmentsPage({
+    super.key,
+    this.classId,
+    this.kind = 'READING',
+    this.menuNo,
+  });
 
   final String? classId;
+  final String kind;
+  final int? menuNo;
 
   @override
   State<AiReadingAssignmentsPage> createState() =>
@@ -44,6 +51,21 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
   bool _refreshing = false;
   bool _submitting = false;
   String? _loadError;
+
+  bool get _isTestMode => widget.kind.toUpperCase() == 'TEST';
+  String get _kindQuery => '?kind=${Uri.encodeQueryComponent(widget.kind)}';
+  String get _pageTitle => _isTestMode ? 'Đề thi' : 'Bài tập';
+  String get _assignmentTitle => _isTestMode ? 'Đề thi AI' : 'Bài đọc AI';
+  String get _createPanelTitle =>
+      _isTestMode ? 'Tạo đề thi từ file PDF' : 'Tạo bài đọc AI từ file';
+  String get _emptyText =>
+      _isTestMode ? 'Chưa có đề thi nào' : 'Chưa có bài đọc AI nào';
+  String get _createdSnack =>
+      _isTestMode ? 'Đã tạo đề thi.' : 'Đã tạo bài đọc AI.';
+  String get _updatedSnack =>
+      _isTestMode ? 'Đã cập nhật đề thi.' : 'Đã cập nhật bài đọc AI.';
+  String get _editDialogTitle => _isTestMode ? 'Sửa đề thi' : 'Sửa bài đọc AI';
+  String get _fileFallbackName => _isTestMode ? 'test-file' : 'reading-file';
 
   @override
   void initState() {
@@ -73,7 +95,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
 
   Future<Map<String, dynamic>> _loadData() async {
     final assignmentsResponse = await ApiService.get(
-      '/identity/ai-reading-assignments/teacher',
+      '/identity/ai-reading-assignments/teacher$_kindQuery',
       token: authService.accessToken,
     );
     final classesResponse = await ApiService.get(
@@ -288,6 +310,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
         Uri.parse('${ApiService.baseUrl}/identity/ai-reading-assignments'),
       );
       request.headers['Authorization'] = 'Bearer ${authService.accessToken}';
+      request.fields['kind'] = widget.kind;
       request.fields['title'] = _titleController.text.trim();
       request.fields['classId'] = _selectedClassId!;
       request.fields['dueAt'] = dueAt.toUtc().toIso8601String();
@@ -304,7 +327,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
       final body = await response.stream.bytesToString();
       final decoded = body.isNotEmpty ? jsonDecode(body) : {};
       if (response.statusCode == 200 && decoded['code'] == 1000) {
-        _showSnackBar('Đã tạo bài đọc AI.');
+        _showSnackBar(_createdSnack);
         _titleController.clear();
         _instructionController.clear();
         _dateController.clear();
@@ -401,7 +424,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
             }
 
             return AlertDialog(
-              title: Text('Sửa bài đọc AI'),
+              title: Text(_editDialogTitle),
               content: SizedBox(
                 width: 620,
                 child: SingleChildScrollView(
@@ -504,7 +527,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                           Expanded(
                             child: Text(
                               replacementFile?.name ??
-                                  'Đang dùng: ${assignment['fileName'] ?? 'reading-file'}',
+                                  'Đang dùng: ${assignment['fileName'] ?? _fileFallbackName}',
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -578,6 +601,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
       ),
     );
     request.headers['Authorization'] = 'Bearer ${authService.accessToken}';
+    request.fields['kind'] = widget.kind;
     request.fields['title'] = title.trim();
     request.fields['classId'] = classId;
     request.fields['dueAt'] = dueAt.toUtc().toIso8601String();
@@ -592,7 +616,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     final body = await response.stream.bytesToString();
     final decoded = body.isNotEmpty ? jsonDecode(body) : {};
     if (response.statusCode == 200 && decoded['code'] == 1000) {
-      _showSnackBar('Đã cập nhật bài đọc AI.');
+      _showSnackBar(_updatedSnack);
       final result = decoded['result'];
       if (result is Map) {
         _upsertAssignment(result.map((key, value) => MapEntry('$key', value)));
@@ -941,15 +965,15 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     final scoped = widget.classId != null;
     return Title(
       color: Colors.black,
-      title: scoped ? 'Bài tập | Lớp $_className' : 'Bài tập',
+      title: scoped ? '$_pageTitle | Lớp $_className' : _pageTitle,
       child: SiteLayout(
-        menuNo: scoped ? 13 : 0,
+        menuNo: widget.menuNo ?? (scoped ? 13 : 0),
         content: Container(
           color: Colors.white,
           child: _loading
               ? Center(child: CircularProgressIndicator())
               : _loadError != null
-              ? Center(child: Text('Không tải được dữ liệu bài đọc AI'))
+              ? Center(child: Text('Không tải được dữ liệu $_assignmentTitle'))
               : ListView(
                   padding: EdgeInsets.all(24),
                   children: [
@@ -971,7 +995,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                     ],
                     Row(
                       children: [
-                        if (!scoped)
+                        if (!scoped && !_isTestMode)
                           IconButton(
                             icon: Icon(
                               Icons.arrow_circle_left_outlined,
@@ -980,7 +1004,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                             onPressed: () => context.go('/exercises'),
                           ),
                         Text(
-                          'Bài đọc AI',
+                          _assignmentTitle,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -1009,7 +1033,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                     if (_assignments.isEmpty)
                       Padding(
                         padding: EdgeInsets.all(24),
-                        child: Center(child: Text('Chưa có bài đọc AI nào')),
+                        child: Center(child: Text(_emptyText)),
                       )
                     else
                       ..._assignments.map(_buildAssignmentTile),
@@ -1032,7 +1056,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tạo bài đọc AI từ file',
+            _createPanelTitle,
             style: TextStyle(fontWeight: FontWeight.w700),
           ),
           SizedBox(height: 12),
@@ -1194,7 +1218,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
               TextButton.icon(
                 onPressed: () => _downloadFile(
                   id,
-                  assignment['fileName']?.toString() ?? 'reading-file',
+                  assignment['fileName']?.toString() ?? _fileFallbackName,
                 ),
                 icon: Icon(Icons.download_outlined),
                 label: Text('Tải đề'),
