@@ -31,6 +31,8 @@ class _TeacherClassAttendancesPageState
   final ScrollController _verticalController = ScrollController();
   final ScrollController _horizontalController = ScrollController();
   final Map<String, bool> _attendanceMap = {};
+  final Map<String, Map<String, dynamic>> _studentsById = {};
+  final List<Map<String, dynamic>> _recentAttendanceRows = [];
   late final Future<Map<String, dynamic>> _classDataFuture;
 
   static String _asCellText(Object? value) {
@@ -238,6 +240,52 @@ class _TeacherClassAttendancesPageState
         .toList();
   }
 
+  String _attendanceHistoryKey(Map<String, dynamic> item) {
+    return [
+      item['classSessionId']?.toString() ?? _selectedClassSessionId ?? '',
+      item['studentId']?.toString() ?? '',
+      item['time']?.toString() ?? '',
+    ].join(':');
+  }
+
+  List<Map<String, dynamic>> _mergeAttendanceHistory(
+    List<Map<String, dynamic>> fetchedItems,
+  ) {
+    final seen = <String>{};
+    final merged = <Map<String, dynamic>>[];
+    for (final item in [..._recentAttendanceRows, ...fetchedItems]) {
+      final key = _attendanceHistoryKey(item);
+      if (seen.add(key)) {
+        merged.add(item);
+      }
+    }
+    return merged;
+  }
+
+  List<Map<String, dynamic>> _attendanceHistoryItemsFromSave(dynamic data) {
+    final result = data is Map ? data['result'] : null;
+    final rawItems = result is Map ? result['attendances'] : null;
+    if (rawItems is! List) return <Map<String, dynamic>>[];
+
+    final session = _selectedClassSession ?? <String, dynamic>{};
+    return rawItems.whereType<Map>().map((rawItem) {
+      final item = rawItem.map((key, value) => MapEntry('$key', value));
+      final studentId = item['studentId']?.toString() ?? '';
+      final student = _studentsById[studentId] ?? <String, dynamic>{};
+      return <String, dynamic>{
+        ...item,
+        'classSessionId': _selectedClassSessionId,
+        'daysOfWeek': session['daysOfWeek'],
+        'startTime': session['startTime'],
+        'endTime': session['endTime'],
+        'topic': session['topic'],
+        'username': student['username'],
+        'firstName': student['firstName'],
+        'lastName': student['lastName'],
+      };
+    }).toList();
+  }
+
   String _shortTime(Object? value) {
     final text = value?.toString() ?? '';
     return text.length >= 5 ? text.substring(0, 5) : text;
@@ -293,7 +341,9 @@ class _TeacherClassAttendancesPageState
           );
         }
 
-        final items = _attendanceHistoryItems(snapshot.data);
+        final items = _mergeAttendanceHistory(
+          _attendanceHistoryItems(snapshot.data),
+        );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -529,6 +579,23 @@ class _TeacherClassAttendancesPageState
                           )
                           .toList();
 
+                      _studentsById
+                        ..clear()
+                        ..addEntries(
+                          students
+                              .where(
+                                (student) =>
+                                    (student['studentId']?.toString() ?? '')
+                                        .isNotEmpty,
+                              )
+                              .map(
+                                (student) => MapEntry(
+                                  student['studentId'].toString(),
+                                  student,
+                                ),
+                              ),
+                        );
+
                       for (final studentItem in students) {
                         final studentId = studentItem['studentId']?.toString();
                         if (studentId != null &&
@@ -763,11 +830,22 @@ class _TeacherClassAttendancesPageState
 
                         final data = jsonDecode(response.body);
                         if (data != null && data['code'] == 1000) {
+                          final savedHistoryItems =
+                              _attendanceHistoryItemsFromSave(data);
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Điểm danh thành công')),
                           );
                           setState(() {
+                            _recentAttendanceRows
+                              ..removeWhere(
+                                (existing) => savedHistoryItems.any(
+                                  (saved) =>
+                                      _attendanceHistoryKey(saved) ==
+                                      _attendanceHistoryKey(existing),
+                                ),
+                              )
+                              ..insertAll(0, savedHistoryItems);
                             _attendanceMap.clear();
                             _studentsDataFuture = _loadStudentsByClassSessionId(
                               _selectedClassSessionId!,
