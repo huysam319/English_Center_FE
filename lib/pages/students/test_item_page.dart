@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ class TestItemPage extends StatefulWidget {
 class _TestItemPageState extends State<TestItemPage> {
   final TextEditingController _answerController = TextEditingController();
   late Future<Map<String, dynamic>> _dataFuture;
+  late Future<Uint8List> _pdfFuture;
 
   Map<String, dynamic>? _assignment;
   PlatformFile? _answerFile;
@@ -33,6 +35,7 @@ class _TestItemPageState extends State<TestItemPage> {
   void initState() {
     super.initState();
     _dataFuture = _loadAssignment();
+    _pdfFuture = _loadPdfBytes();
   }
 
   @override
@@ -58,6 +61,26 @@ class _TestItemPageState extends State<TestItemPage> {
     final assignment = result.map((key, value) => MapEntry('$key', value));
     _assignment = assignment;
     return assignment;
+  }
+
+  Future<Uint8List> _loadPdfBytes() async {
+    final response = await http.get(
+      Uri.parse(
+        '${ApiService.baseUrl}/identity/ai-reading-assignments/${widget.testId}/file',
+      ),
+      headers: {
+        if (authService.accessToken != null)
+          'Authorization': 'Bearer ${authService.accessToken}',
+      },
+    );
+    if (response.statusCode == 401) {
+      await authService.clearAuth();
+      throw UnauthorizedException();
+    }
+    if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+      throw StateError('Cannot load test PDF');
+    }
+    return response.bodyBytes;
   }
 
   String _formatInstant(dynamic value) {
@@ -173,9 +196,6 @@ class _TestItemPageState extends State<TestItemPage> {
   }
 
   Widget _buildTestWorkspace(Map<String, dynamic> assignment) {
-    final token = authService.accessToken;
-    final pdfUrl =
-        '${ApiService.baseUrl}/identity/ai-reading-assignments/${widget.testId}/file';
     final locked = assignment['locked'] == true;
     final submitted = assignment['mySubmissionStatus'] != null;
     final score = assignment['myScore'];
@@ -225,7 +245,7 @@ class _TestItemPageState extends State<TestItemPage> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final stacked = constraints.maxWidth < 900;
-              final pdfPane = _buildPdfPane(pdfUrl, token);
+              final pdfPane = _buildPdfPane();
               final answerPane = _buildAnswerPane(
                 locked: locked,
                 submitted: submitted,
@@ -260,7 +280,7 @@ class _TestItemPageState extends State<TestItemPage> {
     );
   }
 
-  Widget _buildPdfPane(String pdfUrl, String? token) {
+  Widget _buildPdfPane() {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF7F8FA),
@@ -268,13 +288,39 @@ class _TestItemPageState extends State<TestItemPage> {
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
-      child: SfPdfViewer.network(
-        pdfUrl,
-        headers: {if (token != null) 'Authorization': 'Bearer $token'},
-        canShowPaginationDialog: true,
-        canShowScrollHead: true,
-        onDocumentLoadFailed: (_) {
-          _showSnackBar('Không mở được file PDF đề thi.');
+      child: FutureBuilder<Uint8List>(
+        future: _pdfFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            final err = snapshot.error;
+            if (err is UnauthorizedException) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) context.go('/login');
+              });
+              return const SizedBox.shrink();
+            }
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Không mở được file PDF đề thi.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
+          return SfPdfViewer.memory(
+            snapshot.data!,
+            canShowPaginationDialog: true,
+            canShowScrollHead: true,
+            onDocumentLoadFailed: (_) {
+              _showSnackBar('Không mở được file PDF đề thi.');
+            },
+          );
         },
       ),
     );
