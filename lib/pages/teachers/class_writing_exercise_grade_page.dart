@@ -177,7 +177,6 @@ class _ClassWritingExerciseGradePageState extends State<ClassWritingExerciseGrad
                                                 setState(() {
                                                   index--;
                                                   grades.clear();
-                                                  // _studentDataFuture = _loadStudentInfo(result[index]['studentId']);
                                                 });
                                               }
                                             : null,
@@ -245,7 +244,6 @@ class _ClassWritingExerciseGradePageState extends State<ClassWritingExerciseGrad
                                                 setState(() {
                                                   index++;
                                                   grades.clear();
-                                                  // _studentDataFuture = _loadStudentInfo(result[index]['studentId']);
                                                 });
                                               }
                                             : null,
@@ -290,7 +288,7 @@ class _ClassWritingExerciseGradePageState extends State<ClassWritingExerciseGrad
                                       "score": grade.overall ?? "",
                                       "errors": grade.errors.map((e) => {
                                         "studentErrorType": e.type,
-                                        "description": e.description,
+                                        "description": e.descriptionController.text,
                                       }).toList(),
                                       "feedback": grade.commentController.document.toPlainText(),
                                     },
@@ -320,7 +318,7 @@ class _ClassWritingExerciseGradePageState extends State<ClassWritingExerciseGrad
                                           "score": grade.overall ?? "",
                                           "errors": grade.errors.map((e) => {
                                             "studentErrorType": e.type,
-                                            "description": e.description,
+                                            "description": e.descriptionController.text,
                                           }).toList(),
                                           "feedback": grade.commentController.document.toPlainText(),
                                         },

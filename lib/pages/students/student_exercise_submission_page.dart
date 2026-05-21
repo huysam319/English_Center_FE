@@ -349,18 +349,6 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                         );
                       } else if (snapshot.hasData) {
                         final result = snapshot.data!['result'];
-                        // final currentModels = answerModels.where(
-                        //   (model) => model.partNumber == activeSection,
-                        // );
-
-                        // if (currentModels.isEmpty) {
-                        //   return Center(child: CircularProgressIndicator());
-                        // }
-
-                        // final currentModel = currentModels.first;
-                        // final parts = result['parts'] as List;
-
-                        // final partData = parts.where((part) => part['number'] == activeSection).first;
                         return Column(
                           children: [
                             Expanded(
@@ -373,7 +361,10 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                                       "body": html.Style(fontSize: FontSize(16.0)),
                                     },
                                   ),
-                                  if (result['imageUrl'] != null) Image.network(result['imageUrl']),
+                                  if (result['imageUrl'] != null) Align(
+                                    alignment: Alignment.center,
+                                    child: Image.network(result['imageUrl']),
+                                  ),
                                   SizedBox(height: 10,),
 
                                   Container(

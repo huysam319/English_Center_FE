@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
 class WritingExerciseGrade {
@@ -13,7 +14,9 @@ class WritingExerciseGrade {
 }
 class WritingError {
   String? type;
-  String description;
+  TextEditingController descriptionController = TextEditingController();
 
-  WritingError({this.type, this.description = ''});
+  WritingError({this.type, String? description}) {
+    descriptionController.text = description ?? '';
+  }
 }

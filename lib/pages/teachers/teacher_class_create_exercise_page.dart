@@ -502,6 +502,7 @@ class _TeacherClassCreateExercisePageState extends State<TeacherClassCreateExerc
                                   'title': _titleController.text.trim(),
                                   'classIds': [widget.classId],
                                   'type': 'EXERCISE',
+                                  'skill': _selectedSkill,
                                 },
                               );
 
@@ -523,6 +524,7 @@ class _TeacherClassCreateExercisePageState extends State<TeacherClassCreateExerc
                                       'title': _titleController.text.trim(),
                                       'classIds': [widget.classId],
                                       'type': 'EXERCISE',
+                                      'skill': _selectedSkill,
                                     },
                                   );
                                 } else {

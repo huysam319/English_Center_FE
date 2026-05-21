@@ -320,6 +320,7 @@ class _WritingTaskGradingState extends State<WritingTaskGrading> {
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 5),
+                    color: Colors.grey[100],
                     child: Padding(
                       padding: const EdgeInsets.all(8),
                       child: Row(
@@ -361,14 +362,10 @@ class _WritingTaskGradingState extends State<WritingTaskGrading> {
                           Expanded(
                             flex: 3,
                             child: TextFormField(
-                              initialValue:
-                                  error.description,
+                              controller: error.descriptionController,
                               decoration: const InputDecoration(
                                 labelText: "Mô tả lỗi sai",
                               ),
-                              onChanged: (val) {
-                                error.description = val;
-                              },
                             ),
                           ),
                           IconButton(

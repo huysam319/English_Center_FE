@@ -31,6 +31,7 @@ import '../pages/side_menu/teachers/questions_page.dart';
 import '../pages/students/flashcard_set_page.dart';
 import '../pages/students/learning_profile_page.dart';
 import '../pages/students/learning_support_quiz_page.dart';
+import '../pages/students/student_attempt_review_page.dart';
 import '../pages/students/student_exercise_item_page.dart';
 import '../pages/students/student_exercise_submission_page.dart';
 import '../pages/students/student_class_item_page.dart';
@@ -130,6 +131,19 @@ final GoRouter appRouter = GoRouter(
 
         return MaterialPage(
           child: StudentExerciseItemPage(exerciseId: exerciseId ?? ''),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/exercise/:exerciseId/attempt/:attemptId',
+      pageBuilder: (context, state) {
+        final exerciseId = state.pathParameters['exerciseId'];
+        final attemptId = state.pathParameters['attemptId'];
+        return MaterialPage(
+          child: StudentAttemptReviewPage(
+            attemptId: attemptId ?? '',
+            exerciseId: exerciseId ?? '',
+          ),
         );
       },
     ),

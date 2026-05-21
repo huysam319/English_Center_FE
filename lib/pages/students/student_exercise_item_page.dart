@@ -293,14 +293,18 @@ class _StudentExerciseItemPageState extends State<StudentExerciseItemPage> {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Trạng thái: ${attempt['status']}'),
+                                    Text(
+                                      'Trạng thái: ${
+                                        attempt['status'] == 'COMPLETED' ? 'Đã nộp' : 
+                                        attempt['status'] == 'IN_PROGRESS' ? 'Đang làm' : attempt['status']
+                                      }',
+                                    ),
                                     Text('Thời gian bắt đầu: ${DateTime.parse(attempt['startTime']).toLocal()}'),
                                     Text('Thời gian nộp bài: ${attempt['status'] == 'COMPLETED' ? DateTime.parse(attempt['endTime']).toLocal() : 'Chưa nộp'}'),
                                   ],
                                 ),
                                 onTap: () {
-                                  // Chuyển sang trang chi tiết lần làm bài này
-                                  // Cần truyền attemptId để tải dữ liệu chi tiết
+                                  context.go('/exercise/${widget.exerciseId}/attempt/${attempt['id']}');
                                 },
                               );
                             },
