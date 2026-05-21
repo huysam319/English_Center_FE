@@ -31,6 +31,8 @@ class _TeacherClassAttendancesPageState
   final ScrollController _verticalController = ScrollController();
   final ScrollController _horizontalController = ScrollController();
   final Map<String, bool> _attendanceMap = {};
+  final Map<String, Map<String, dynamic>> _studentsById = {};
+  final List<Map<String, dynamic>> _recentAttendanceRows = [];
   late final Future<Map<String, dynamic>> _classDataFuture;
 
   static String _asCellText(Object? value) {
@@ -238,6 +240,52 @@ class _TeacherClassAttendancesPageState
         .toList();
   }
 
+  String _attendanceHistoryKey(Map<String, dynamic> item) {
+    return [
+      item['classSessionId']?.toString() ?? _selectedClassSessionId ?? '',
+      item['studentId']?.toString() ?? '',
+      item['time']?.toString() ?? '',
+    ].join(':');
+  }
+
+  List<Map<String, dynamic>> _mergeAttendanceHistory(
+    List<Map<String, dynamic>> fetchedItems,
+  ) {
+    final seen = <String>{};
+    final merged = <Map<String, dynamic>>[];
+    for (final item in [..._recentAttendanceRows, ...fetchedItems]) {
+      final key = _attendanceHistoryKey(item);
+      if (seen.add(key)) {
+        merged.add(item);
+      }
+    }
+    return merged;
+  }
+
+  List<Map<String, dynamic>> _attendanceHistoryItemsFromSave(dynamic data) {
+    final result = data is Map ? data['result'] : null;
+    final rawItems = result is Map ? result['attendances'] : null;
+    if (rawItems is! List) return <Map<String, dynamic>>[];
+
+    final session = _selectedClassSession ?? <String, dynamic>{};
+    return rawItems.whereType<Map>().map((rawItem) {
+      final item = rawItem.map((key, value) => MapEntry('$key', value));
+      final studentId = item['studentId']?.toString() ?? '';
+      final student = _studentsById[studentId] ?? <String, dynamic>{};
+      return <String, dynamic>{
+        ...item,
+        'classSessionId': _selectedClassSessionId,
+        'daysOfWeek': session['daysOfWeek'],
+        'startTime': session['startTime'],
+        'endTime': session['endTime'],
+        'topic': session['topic'],
+        'username': student['username'],
+        'firstName': student['firstName'],
+        'lastName': student['lastName'],
+      };
+    }).toList();
+  }
+
   String _shortTime(Object? value) {
     final text = value?.toString() ?? '';
     return text.length >= 5 ? text.substring(0, 5) : text;
@@ -272,6 +320,160 @@ class _TeacherClassAttendancesPageState
     return name.isEmpty ? '-' : name;
   }
 
+  String _attendanceHistoryGroupKey(Map<String, dynamic> item) {
+    return [
+      item['classSessionId']?.toString() ?? _selectedClassSessionId ?? '',
+      item['time']?.toString() ?? '',
+    ].join(':');
+  }
+
+  List<Map<String, dynamic>> _attendanceHistoryGroups(
+    List<Map<String, dynamic>> items,
+  ) {
+    final grouped = <String, List<Map<String, dynamic>>>{};
+    for (final item in items) {
+      grouped.putIfAbsent(_attendanceHistoryGroupKey(item), () => []).add(item);
+    }
+
+    return grouped.entries.map((entry) {
+      final rows = [...entry.value]
+        ..sort((a, b) => _studentName(a).compareTo(_studentName(b)));
+      return <String, dynamic>{'summary': rows.first, 'rows': rows};
+    }).toList();
+  }
+
+  String _attendanceGroupSummary(List<Map<String, dynamic>> rows) {
+    final absentCount = rows
+        .where((item) => item['status']?.toString() == 'absent')
+        .length;
+    final presentCount = rows.length - absentCount;
+    return '$presentCount có mặt • $absentCount vắng';
+  }
+
+  Widget _buildAttendanceHistoryGroup(Map<String, dynamic> group) {
+    final summary = group['summary'] as Map<String, dynamic>;
+    final rows = (group['rows'] as List).cast<Map<String, dynamic>>();
+
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        border: Border.all(color: Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Color(0xFFF6F8FF),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+            ),
+            child: Wrap(
+              spacing: 16,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  'Lần điểm danh: ${_formatAttendanceTime(summary['time'])}',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                Text(_historySessionText(summary)),
+                Text(
+                  _attendanceGroupSummary(rows),
+                  style: TextStyle(color: Color(0xFF555555)),
+                ),
+              ],
+            ),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: const [
+                DataColumn(label: Text('Học viên')),
+                DataColumn(label: Text('Tên đăng nhập')),
+                DataColumn(label: Text('Trạng thái')),
+              ],
+              rows: [
+                for (final item in rows)
+                  DataRow(
+                    cells: [
+                      DataCell(Text(_studentName(item))),
+                      DataCell(Text(item['username']?.toString() ?? '-')),
+                      DataCell(Text(_formatStatus(item['status']))),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupedAttendanceHistory() {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _historyDataFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          final err = snapshot.error;
+          if (err is UnauthorizedException) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) context.go('/login');
+            });
+            return SizedBox.shrink();
+          }
+          return Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Lỗi tải lịch sử điểm danh'),
+          );
+        }
+
+        final items = _mergeAttendanceHistory(
+          _attendanceHistoryItems(snapshot.data),
+        );
+        final groups = _attendanceHistoryGroups(items);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Lịch sử điểm danh',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+            ),
+            SizedBox(height: 10),
+            if (groups.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Color(0xFFE0E0E0)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('Chưa có lịch sử điểm danh'),
+              )
+            else
+              Column(
+                children: [
+                  for (final group in groups)
+                    _buildAttendanceHistoryGroup(group),
+                ],
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ignore: unused_element
   Widget _buildAttendanceHistory() {
     return FutureBuilder<Map<String, dynamic>>(
       future: _historyDataFuture,
@@ -293,7 +495,9 @@ class _TeacherClassAttendancesPageState
           );
         }
 
-        final items = _attendanceHistoryItems(snapshot.data);
+        final items = _mergeAttendanceHistory(
+          _attendanceHistoryItems(snapshot.data),
+        );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -529,6 +733,23 @@ class _TeacherClassAttendancesPageState
                           )
                           .toList();
 
+                      _studentsById
+                        ..clear()
+                        ..addEntries(
+                          students
+                              .where(
+                                (student) =>
+                                    (student['studentId']?.toString() ?? '')
+                                        .isNotEmpty,
+                              )
+                              .map(
+                                (student) => MapEntry(
+                                  student['studentId'].toString(),
+                                  student,
+                                ),
+                              ),
+                        );
+
                       for (final studentItem in students) {
                         final studentId = studentItem['studentId']?.toString();
                         if (studentId != null &&
@@ -763,11 +984,22 @@ class _TeacherClassAttendancesPageState
 
                         final data = jsonDecode(response.body);
                         if (data != null && data['code'] == 1000) {
+                          final savedHistoryItems =
+                              _attendanceHistoryItemsFromSave(data);
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Điểm danh thành công')),
                           );
                           setState(() {
+                            _recentAttendanceRows
+                              ..removeWhere(
+                                (existing) => savedHistoryItems.any(
+                                  (saved) =>
+                                      _attendanceHistoryKey(saved) ==
+                                      _attendanceHistoryKey(existing),
+                                ),
+                              )
+                              ..insertAll(0, savedHistoryItems);
                             _attendanceMap.clear();
                             _studentsDataFuture = _loadStudentsByClassSessionId(
                               _selectedClassSessionId!,
@@ -803,7 +1035,7 @@ class _TeacherClassAttendancesPageState
                   ],
                 ),
                 SizedBox(height: 32),
-                _buildAttendanceHistory(),
+                _buildGroupedAttendanceHistory(),
               ],
             ),
           );

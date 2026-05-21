@@ -202,6 +202,95 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
     _saveBytes(fileName, response.bodyBytes, response.headers['content-type']);
   }
 
+  Map<String, dynamic>? _submissionForAssignment(String assignmentId) {
+    for (final result in _results) {
+      if (result['assignmentId']?.toString() == assignmentId) {
+        return result;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _downloadSubmissionFile(Map<String, dynamic> submission) async {
+    final assignmentId = submission['assignmentId']?.toString();
+    final submissionId = submission['id']?.toString();
+    if (assignmentId == null || submissionId == null) return;
+
+    final response = await http.get(
+      Uri.parse(
+        '${ApiService.baseUrl}/identity/ai-reading-assignments/$assignmentId/my-submissions/$submissionId/file',
+      ),
+      headers: {'Authorization': 'Bearer ${authService.accessToken}'},
+    );
+    if (response.statusCode != 200) {
+      _showSnackBar('Tải file bài làm thất bại.');
+      return;
+    }
+    _saveBytes(
+      submission['fileName']?.toString() ?? 'bai-lam',
+      response.bodyBytes,
+      response.headers['content-type'],
+    );
+  }
+
+  Future<void> _showSubmissionDialog(Map<String, dynamic> submission) async {
+    final text = submission['submissionText']?.toString() ?? '';
+    final fileName = submission['fileName']?.toString() ?? '';
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('Bài làm đã nộp'),
+          content: SizedBox(
+            width: 560,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Nộp lúc: ${_formatInstant(submission['submittedAt'])}'),
+                SizedBox(height: 12),
+                Text(
+                  'Nội dung bài làm',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  constraints: BoxConstraints(maxHeight: 260),
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      text.trim().isEmpty ? 'Không có nội dung text' : text,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                if (fileName.isNotEmpty)
+                  OutlinedButton.icon(
+                    onPressed: () => _downloadSubmissionFile(submission),
+                    icon: Icon(Icons.download_outlined),
+                    label: Text('Tải file bài làm: $fileName'),
+                  )
+                else
+                  Text('Không có file đính kèm'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('Đóng'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _saveBytes(String fileName, Uint8List bytes, String? contentType) {
     final blob = html.Blob([bytes], contentType ?? 'application/octet-stream');
     final url = html.Url.createObjectUrlFromBlob(blob);
@@ -427,6 +516,9 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
         final locked = assignment['locked'] == true;
         final submitted = assignment['mySubmissionStatus'] != null;
         final graded = assignment['myScore'] != null;
+        final submission = _submissionForAssignment(
+          assignment['id']?.toString() ?? '',
+        );
         return Container(
           margin: EdgeInsets.only(bottom: 12),
           padding: EdgeInsets.all(16),
@@ -484,6 +576,14 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
                     label: Text(submitted ? 'Nộp lại' : 'Nộp bài'),
                   ),
                   SizedBox(width: 12),
+                  if (submission != null) ...[
+                    OutlinedButton.icon(
+                      onPressed: () => _showSubmissionDialog(submission),
+                      icon: Icon(Icons.visibility_outlined),
+                      label: Text('Xem lại bài làm'),
+                    ),
+                    SizedBox(width: 12),
+                  ],
                   if (graded)
                     Text(
                       'Điểm: ${assignment['myScore']}',

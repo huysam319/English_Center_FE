@@ -14,9 +14,16 @@ import '../../services/auth_service.dart';
 import '../../widgets/layout/layout.dart';
 
 class AiReadingAssignmentsPage extends StatefulWidget {
-  const AiReadingAssignmentsPage({super.key, this.classId});
+  const AiReadingAssignmentsPage({
+    super.key,
+    this.classId,
+    this.kind = 'READING',
+    this.menuNo,
+  });
 
   final String? classId;
+  final String kind;
+  final int? menuNo;
 
   @override
   State<AiReadingAssignmentsPage> createState() =>
@@ -44,6 +51,21 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
   bool _refreshing = false;
   bool _submitting = false;
   String? _loadError;
+
+  bool get _isTestMode => widget.kind.toUpperCase() == 'TEST';
+  String get _kindQuery => '?kind=${Uri.encodeQueryComponent(widget.kind)}';
+  String get _pageTitle => _isTestMode ? 'Đề thi' : 'Bài tập';
+  String get _assignmentTitle => _isTestMode ? 'Đề thi AI' : 'Bài đọc AI';
+  String get _createPanelTitle =>
+      _isTestMode ? 'Tạo đề thi từ file PDF' : 'Tạo bài đọc AI từ file';
+  String get _emptyText =>
+      _isTestMode ? 'Chưa có đề thi nào' : 'Chưa có bài đọc AI nào';
+  String get _createdSnack =>
+      _isTestMode ? 'Đã tạo đề thi.' : 'Đã tạo bài đọc AI.';
+  String get _updatedSnack =>
+      _isTestMode ? 'Đã cập nhật đề thi.' : 'Đã cập nhật bài đọc AI.';
+  String get _editDialogTitle => _isTestMode ? 'Sửa đề thi' : 'Sửa bài đọc AI';
+  String get _fileFallbackName => _isTestMode ? 'test-file' : 'reading-file';
 
   @override
   void initState() {
@@ -73,7 +95,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
 
   Future<Map<String, dynamic>> _loadData() async {
     final assignmentsResponse = await ApiService.get(
-      '/identity/ai-reading-assignments/teacher',
+      '/identity/ai-reading-assignments/teacher$_kindQuery',
       token: authService.accessToken,
     );
     final classesResponse = await ApiService.get(
@@ -288,6 +310,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
         Uri.parse('${ApiService.baseUrl}/identity/ai-reading-assignments'),
       );
       request.headers['Authorization'] = 'Bearer ${authService.accessToken}';
+      request.fields['kind'] = widget.kind;
       request.fields['title'] = _titleController.text.trim();
       request.fields['classId'] = _selectedClassId!;
       request.fields['dueAt'] = dueAt.toUtc().toIso8601String();
@@ -304,7 +327,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
       final body = await response.stream.bytesToString();
       final decoded = body.isNotEmpty ? jsonDecode(body) : {};
       if (response.statusCode == 200 && decoded['code'] == 1000) {
-        _showSnackBar('Đã tạo bài đọc AI.');
+        _showSnackBar(_createdSnack);
         _titleController.clear();
         _instructionController.clear();
         _dateController.clear();
@@ -337,6 +360,275 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     }
   }
 
+  Future<void> _showEditAssignmentDialog(
+    Map<String, dynamic> assignment,
+  ) async {
+    final titleController = TextEditingController(
+      text: assignment['title']?.toString() ?? '',
+    );
+    final instructionController = TextEditingController(
+      text: assignment['instruction']?.toString() ?? '',
+    );
+    final parsedDueAt = DateTime.tryParse(
+      assignment['dueAt']?.toString() ?? '',
+    )?.toLocal();
+    DateTime? editDueDate = parsedDueAt;
+    TimeOfDay? editDueTime = parsedDueAt == null
+        ? null
+        : TimeOfDay(hour: parsedDueAt.hour, minute: parsedDueAt.minute);
+    final dateController = TextEditingController(
+      text: parsedDueAt == null
+          ? ''
+          : DateFormat('dd/MM/yyyy').format(parsedDueAt),
+    );
+    final timeController = TextEditingController(
+      text: parsedDueAt == null
+          ? ''
+          : '${parsedDueAt.hour.toString().padLeft(2, '0')}:${parsedDueAt.minute.toString().padLeft(2, '0')}',
+    );
+    final classNameController = TextEditingController(text: _className);
+    String? editClassId = assignment['classId']?.toString();
+    PlatformFile? replacementFile;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> pickEditDate() async {
+              final now = DateTime.now();
+              final selected = await showDatePicker(
+                context: context,
+                initialDate: editDueDate ?? now,
+                firstDate: DateTime(now.year - 1),
+                lastDate: DateTime(now.year + 3),
+              );
+              if (selected == null) return;
+              setDialogState(() {
+                editDueDate = selected;
+                dateController.text = DateFormat('dd/MM/yyyy').format(selected);
+              });
+            }
+
+            Future<void> pickEditTime() async {
+              final selected = await showTimePicker(
+                context: context,
+                initialTime: editDueTime ?? TimeOfDay.now(),
+              );
+              if (selected == null) return;
+              setDialogState(() {
+                editDueTime = selected;
+                timeController.text =
+                    '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}';
+              });
+            }
+
+            return AlertDialog(
+              title: Text(_editDialogTitle),
+              content: SizedBox(
+                width: 620,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: titleController,
+                        decoration: InputDecoration(
+                          labelText: 'Tiêu đề',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      widget.classId != null
+                          ? TextField(
+                              readOnly: true,
+                              controller: classNameController,
+                              decoration: InputDecoration(
+                                labelText: 'Lớp',
+                                border: OutlineInputBorder(),
+                              ),
+                            )
+                          : DropdownButtonFormField<String>(
+                              initialValue: editClassId,
+                              items: _classes
+                                  .map(
+                                    (course) => DropdownMenuItem<String>(
+                                      value: course['id'].toString(),
+                                      child: Text(
+                                        course['name']?.toString() ?? '',
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) =>
+                                  setDialogState(() => editClassId = value),
+                              decoration: InputDecoration(
+                                labelText: 'Lớp',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: dateController,
+                              readOnly: true,
+                              onTap: pickEditDate,
+                              decoration: InputDecoration(
+                                labelText: 'Ngày hết hạn',
+                                border: OutlineInputBorder(),
+                                suffixIcon: Icon(Icons.calendar_month_outlined),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: timeController,
+                              readOnly: true,
+                              onTap: pickEditTime,
+                              decoration: InputDecoration(
+                                labelText: 'Giờ hết hạn',
+                                border: OutlineInputBorder(),
+                                suffixIcon: Icon(Icons.schedule_outlined),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12),
+                      TextField(
+                        controller: instructionController,
+                        maxLines: 4,
+                        decoration: InputDecoration(
+                          labelText: 'Ghi chú cho học sinh',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              final result = await FilePicker.platform
+                                  .pickFiles(withData: true);
+                              if (result == null || result.files.isEmpty) {
+                                return;
+                              }
+                              setDialogState(() {
+                                replacementFile = result.files.first;
+                              });
+                            },
+                            icon: Icon(Icons.upload_file_outlined),
+                            label: Text('Đổi file đề'),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              replacementFile?.name ??
+                                  'Đang dùng: ${assignment['fileName'] ?? _fileFallbackName}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text('Hủy'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final dueDate = editDueDate;
+                    final dueTime = editDueTime;
+                    if (titleController.text.trim().isEmpty ||
+                        editClassId == null ||
+                        dueDate == null ||
+                        dueTime == null) {
+                      _showSnackBar('Vui lòng nhập đủ thông tin bài tập.');
+                      return;
+                    }
+                    final dueAt = DateTime(
+                      dueDate.year,
+                      dueDate.month,
+                      dueDate.day,
+                      dueTime.hour,
+                      dueTime.minute,
+                    );
+                    await _updateAssignment(
+                      assignment['id'].toString(),
+                      titleController.text,
+                      editClassId!,
+                      dueAt,
+                      instructionController.text,
+                      replacementFile,
+                    );
+                    if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  },
+                  child: Text('Lưu'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    titleController.dispose();
+    instructionController.dispose();
+    dateController.dispose();
+    timeController.dispose();
+    classNameController.dispose();
+  }
+
+  Future<void> _updateAssignment(
+    String assignmentId,
+    String title,
+    String classId,
+    DateTime dueAt,
+    String instruction,
+    PlatformFile? file,
+  ) async {
+    final request = http.MultipartRequest(
+      'PUT',
+      Uri.parse(
+        '${ApiService.baseUrl}/identity/ai-reading-assignments/$assignmentId',
+      ),
+    );
+    request.headers['Authorization'] = 'Bearer ${authService.accessToken}';
+    request.fields['kind'] = widget.kind;
+    request.fields['title'] = title.trim();
+    request.fields['classId'] = classId;
+    request.fields['dueAt'] = dueAt.toUtc().toIso8601String();
+    request.fields['instruction'] = instruction.trim();
+    if (file?.bytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes('file', file!.bytes!, filename: file.name),
+      );
+    }
+
+    final response = await request.send();
+    final body = await response.stream.bytesToString();
+    final decoded = body.isNotEmpty ? jsonDecode(body) : {};
+    if (response.statusCode == 200 && decoded['code'] == 1000) {
+      _showSnackBar(_updatedSnack);
+      final result = decoded['result'];
+      if (result is Map) {
+        _upsertAssignment(result.map((key, value) => MapEntry('$key', value)));
+      }
+      unawaited(_refreshData());
+    } else {
+      _showSnackBar(
+        decoded['message']?.toString() ?? 'Cập nhật bài đọc thất bại.',
+      );
+    }
+  }
+
   Future<void> _downloadFile(String id, String fileName) async {
     final response = await http.get(
       Uri.parse(
@@ -349,6 +641,93 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
       return;
     }
     _saveBytes(fileName, response.bodyBytes, response.headers['content-type']);
+  }
+
+  Future<void> _downloadSubmissionFile(
+    String assignmentId,
+    Map<String, dynamic> submission,
+  ) async {
+    final submissionId = submission['id']?.toString() ?? '';
+    if (assignmentId.isEmpty || submissionId.isEmpty) return;
+    final response = await http.get(
+      Uri.parse(
+        '${ApiService.baseUrl}/identity/ai-reading-assignments/$assignmentId/submissions/$submissionId/file',
+      ),
+      headers: {'Authorization': 'Bearer ${authService.accessToken}'},
+    );
+    if (response.statusCode != 200) {
+      _showSnackBar('Tải file bài nộp thất bại.');
+      return;
+    }
+    _saveBytes(
+      submission['fileName']?.toString() ?? 'student-submission',
+      response.bodyBytes,
+      response.headers['content-type'],
+    );
+  }
+
+  Future<void> _showSubmissionDialog(
+    String assignmentId,
+    Map<String, dynamic> submission,
+  ) async {
+    final name =
+        '${submission['lastName'] ?? ''} ${submission['firstName'] ?? ''}'
+            .trim();
+    final text = submission['submissionText']?.toString() ?? '';
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(name.isEmpty ? 'Bài nộp học sinh' : 'Bài nộp của $name'),
+          content: SizedBox(
+            width: 640,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Nộp lúc: ${_formatInstant(submission['submittedAt'])}'),
+                  SizedBox(height: 12),
+                  Text(
+                    'Nội dung text',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    constraints: BoxConstraints(minHeight: 120),
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: SelectableText(
+                      text.trim().isEmpty ? 'Không có nội dung text' : text,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  if ((submission['fileName']?.toString() ?? '').isNotEmpty)
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          _downloadSubmissionFile(assignmentId, submission),
+                      icon: Icon(Icons.download_outlined),
+                      label: Text('Tải file: ${submission['fileName']}'),
+                    )
+                  else
+                    Text('Không có file đính kèm'),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('Đóng'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _saveBytes(String fileName, Uint8List bytes, String? contentType) {
@@ -496,7 +875,6 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
           if (index >= 0) {
             _assignments[index] = {
               ..._assignments[index],
-              'locked': true,
               'submissionCount': submissions.length,
               'gradedCount': submissions
                   .where((submission) => submission['score'] != null)
@@ -587,15 +965,15 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     final scoped = widget.classId != null;
     return Title(
       color: Colors.black,
-      title: scoped ? 'Bài tập | Lớp $_className' : 'Bài tập',
+      title: scoped ? '$_pageTitle | Lớp $_className' : _pageTitle,
       child: SiteLayout(
-        menuNo: scoped ? 13 : 0,
+        menuNo: widget.menuNo ?? (scoped ? 13 : 0),
         content: Container(
           color: Colors.white,
           child: _loading
               ? Center(child: CircularProgressIndicator())
               : _loadError != null
-              ? Center(child: Text('Không tải được dữ liệu bài đọc AI'))
+              ? Center(child: Text('Không tải được dữ liệu $_assignmentTitle'))
               : ListView(
                   padding: EdgeInsets.all(24),
                   children: [
@@ -617,7 +995,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                     ],
                     Row(
                       children: [
-                        if (!scoped)
+                        if (!scoped && !_isTestMode)
                           IconButton(
                             icon: Icon(
                               Icons.arrow_circle_left_outlined,
@@ -626,7 +1004,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                             onPressed: () => context.go('/exercises'),
                           ),
                         Text(
-                          'Bài đọc AI',
+                          _assignmentTitle,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -655,7 +1033,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                     if (_assignments.isEmpty)
                       Padding(
                         padding: EdgeInsets.all(24),
-                        child: Center(child: Text('Chưa có bài đọc AI nào')),
+                        child: Center(child: Text(_emptyText)),
                       )
                     else
                       ..._assignments.map(_buildAssignmentTile),
@@ -678,7 +1056,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tạo bài đọc AI từ file',
+            _createPanelTitle,
             style: TextStyle(fontWeight: FontWeight.w700),
           ),
           SizedBox(height: 12),
@@ -706,7 +1084,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                         ),
                       )
                     : DropdownButtonFormField<String>(
-                        value: _selectedClassId,
+                        initialValue: _selectedClassId,
                         items: classes
                             .map(
                               (course) => DropdownMenuItem<String>(
@@ -833,9 +1211,14 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
               ),
               Spacer(),
               TextButton.icon(
+                onPressed: () => _showEditAssignmentDialog(assignment),
+                icon: Icon(Icons.edit_outlined),
+                label: Text('Sửa'),
+              ),
+              TextButton.icon(
                 onPressed: () => _downloadFile(
                   id,
-                  assignment['fileName']?.toString() ?? 'reading-file',
+                  assignment['fileName']?.toString() ?? _fileFallbackName,
                 ),
                 icon: Icon(Icons.download_outlined),
                 label: Text('Tải đề'),
@@ -882,6 +1265,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                   DataColumn(label: Text('Nộp lúc')),
                   DataColumn(label: Text('Điểm')),
                   DataColumn(label: Text('Trạng thái')),
+                  DataColumn(label: Text('Bài làm')),
                   DataColumn(label: Text('Gợi ý')),
                   DataColumn(label: Text('Link ôn tập')),
                 ],
@@ -904,6 +1288,14 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                       DataCell(Text(_formatInstant(submission['submittedAt']))),
                       DataCell(Text(submission['score']?.toString() ?? '-')),
                       DataCell(Text(submission['status']?.toString() ?? '-')),
+                      DataCell(
+                        TextButton.icon(
+                          onPressed: () =>
+                              _showSubmissionDialog(id, submission),
+                          icon: Icon(Icons.visibility_outlined, size: 18),
+                          label: Text('Xem bài'),
+                        ),
+                      ),
                       DataCell(
                         SizedBox(
                           width: 420,

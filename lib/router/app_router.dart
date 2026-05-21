@@ -38,7 +38,6 @@ import '../pages/students/student_class_item_page.dart';
 import '../pages/students/test_item_page.dart';
 import '../pages/teachers/ai_reading_assignments_page.dart';
 import '../pages/teachers/class_writing_exercise_grade_page.dart';
-import '../pages/teachers/create_test_page.dart';
 import '../pages/teachers/teacher_class_attendances_page.dart';
 import '../pages/teachers/teacher_class_create_exercise_page.dart';
 import '../pages/teachers/teacher_class_exercise_detail_page.dart';
@@ -192,7 +191,8 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/learning-profile',
-      pageBuilder: (context, state) => MaterialPage(child: LearningProfilePage()),
+      pageBuilder: (context, state) =>
+          MaterialPage(child: LearningProfilePage()),
     ),
     GoRoute(
       path: '/exercises',
@@ -219,7 +219,7 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/tests/create',
-      pageBuilder: (context, state) => MaterialPage(child: CreateTestPage()),
+      pageBuilder: (context, state) => MaterialPage(child: TestsPage()),
     ),
     GoRoute(
       path: '/questions',
