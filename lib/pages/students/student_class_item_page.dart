@@ -34,10 +34,16 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
     final exerciseData = await _getWithRefresh(
       '/identity/assessments/class/${widget.classId}',
     );
+    final attendanceData = await _getWithRefresh(
+      '/identity/attendances/student/class/${widget.classId}',
+    );
 
     return {
       'class': _extractMap(classData['result']) ?? <String, dynamic>{},
       'exercises': _extractList(exerciseData['result']),
+      'attendanceHistory': _extractAttendanceHistory(
+        attendanceData['result'],
+      ),
     };
   }
 
@@ -76,6 +82,15 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
         .toList();
   }
 
+  List<Map<String, dynamic>> _extractAttendanceHistory(dynamic value) {
+    final rawList = value is Map ? value['attendances'] : null;
+    if (rawList is! List) return <Map<String, dynamic>>[];
+    return rawList
+        .whereType<Map>()
+        .map((item) => item.map((key, value) => MapEntry('$key', value)))
+        .toList();
+  }
+
   List<Map<String, dynamic>> _sessions(Map<String, dynamic> classInfo) {
     final raw = classInfo['classSessions'];
     if (raw is! List) return <Map<String, dynamic>>[];
@@ -95,6 +110,30 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
     final start = _shortTime(session['startTime']);
     final end = _shortTime(session['endTime']);
     return '$day $start - $end'.trim();
+  }
+
+  String _formatAttendanceTime(Object? value) {
+    final text = value?.toString() ?? '';
+    final dateTime = DateTime.tryParse(text);
+    if (dateTime == null) return text.isEmpty ? '-' : text;
+    return '${dateTime.day.toString().padLeft(2, '0')}/'
+        '${dateTime.month.toString().padLeft(2, '0')}/'
+        '${dateTime.year} '
+        '${dateTime.hour.toString().padLeft(2, '0')}:'
+        '${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _formatStatus(Object? status) {
+    return status?.toString() == 'absent' ? 'Vắng' : 'Có mặt';
+  }
+
+  String _historySessionText(Map<String, dynamic> item) {
+    final day = getDayShortName(item['daysOfWeek']?.toString() ?? '');
+    final start = _shortTime(item['startTime']);
+    final end = _shortTime(item['endTime']);
+    final topic = item['topic']?.toString() ?? '';
+    final base = '$day $start - $end'.trim();
+    return topic.isEmpty ? base : '$base - $topic';
   }
 
   Widget _buildClassInfo(Map<String, dynamic> classInfo) {
@@ -188,6 +227,55 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
     );
   }
 
+  Widget _buildAttendanceHistory(List<Map<String, dynamic>> history) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Lịch sử điểm danh',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+        SizedBox(height: 10),
+        if (history.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              border: Border.all(color: Color(0xFFE0E0E0)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text('Chưa có lịch sử điểm danh'),
+          )
+        else
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(Color(0xFF1E40AF)),
+              headingTextStyle: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+              columns: const [
+                DataColumn(label: Text('Ngày')),
+                DataColumn(label: Text('Buổi học')),
+                DataColumn(label: Text('Trạng thái')),
+              ],
+              rows: [
+                for (final item in history)
+                  DataRow(
+                    cells: [
+                      DataCell(Text(_formatAttendanceTime(item['time']))),
+                      DataCell(Text(_historySessionText(item))),
+                      DataCell(Text(_formatStatus(item['status']))),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
@@ -205,6 +293,11 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
         final className = classInfo['name']?.toString() ?? '';
         final exercises = snapshot.data?['exercises'] is List
             ? (snapshot.data!['exercises'] as List)
+                  .whereType<Map<String, dynamic>>()
+                  .toList()
+            : <Map<String, dynamic>>[];
+        final attendanceHistory = snapshot.data?['attendanceHistory'] is List
+            ? (snapshot.data!['attendanceHistory'] as List)
                   .whereType<Map<String, dynamic>>()
                   .toList()
             : <Map<String, dynamic>>[];
@@ -235,6 +328,8 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
                       Center(child: Text('Lỗi tải thông tin lớp học'))
                     else ...[
                       _buildClassInfo(classInfo),
+                      SizedBox(height: 24),
+                      _buildAttendanceHistory(attendanceHistory),
                       SizedBox(height: 24),
                       Row(
                         children: [

@@ -846,7 +846,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                 label: Text('Đáp án'),
               ),
               ElevatedButton.icon(
-                onPressed: locked && !grading
+                onPressed: id.isNotEmpty && !grading
                     ? () => _gradeAssignment(id)
                     : null,
                 icon: grading
