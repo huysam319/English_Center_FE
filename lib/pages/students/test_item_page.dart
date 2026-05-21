@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui_web' as ui;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:universal_html/html.dart' as html;
 
 import '../../exceptions/unauthorized_exception.dart';
 import '../../services/api_service.dart';
@@ -29,6 +30,8 @@ class _TestItemPageState extends State<TestItemPage> {
 
   Map<String, dynamic>? _assignment;
   PlatformFile? _answerFile;
+  String? _pdfObjectUrl;
+  String? _pdfViewType;
   bool _submitting = false;
 
   @override
@@ -40,6 +43,7 @@ class _TestItemPageState extends State<TestItemPage> {
 
   @override
   void dispose() {
+    _revokePdfObjectUrl();
     _answerController.dispose();
     super.dispose();
   }
@@ -158,6 +162,114 @@ class _TestItemPageState extends State<TestItemPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _revokePdfObjectUrl() {
+    final objectUrl = _pdfObjectUrl;
+    if (objectUrl == null) return;
+    html.Url.revokeObjectUrl(objectUrl);
+    _pdfObjectUrl = null;
+    _pdfViewType = null;
+  }
+
+  bool _looksLikePdf(Uint8List bytes) {
+    const signature = [0x25, 0x50, 0x44, 0x46, 0x2D]; // %PDF-
+    final maxOffset = bytes.length < 1024 ? bytes.length : 1024;
+    for (var offset = 0; offset <= maxOffset - signature.length; offset++) {
+      var matched = true;
+      for (var index = 0; index < signature.length; index++) {
+        if (bytes[offset + index] != signature[index]) {
+          matched = false;
+          break;
+        }
+      }
+      if (matched) return true;
+    }
+    return false;
+  }
+
+  String get _assignmentFileName {
+    final fileName = _assignment?['fileName']?.toString().trim();
+    return fileName == null || fileName.isEmpty ? 'de-thi' : fileName;
+  }
+
+  void _downloadBytes(Uint8List bytes, String fileName) {
+    final blob = html.Blob([bytes], 'application/octet-stream');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    html.AnchorElement(href: url)
+      ..download = fileName
+      ..click();
+    html.Url.revokeObjectUrl(url);
+  }
+
+  Widget _buildBrowserPdfViewer(Uint8List pdfBytes) {
+    if (_pdfViewType == null) {
+      final blob = html.Blob([pdfBytes], 'application/pdf');
+      final objectUrl = html.Url.createObjectUrlFromBlob(blob);
+      final viewType =
+          'test-pdf-${widget.testId}-${DateTime.now().microsecondsSinceEpoch}';
+
+      _pdfObjectUrl = objectUrl;
+      _pdfViewType = viewType;
+      ui.platformViewRegistry.registerViewFactory(viewType, (int viewId) {
+        return html.IFrameElement()
+          ..src = objectUrl
+          ..style.border = '0'
+          ..style.height = '100%'
+          ..style.width = '100%'
+          ..setAttribute('title', 'File PDF đề thi');
+      });
+    }
+
+    return HtmlElementView(
+      key: ValueKey(_pdfViewType),
+      viewType: _pdfViewType!,
+    );
+  }
+
+  Widget _buildInvalidPdfPane(Uint8List bytes) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.picture_as_pdf_outlined,
+                size: 44,
+                color: Color(0xFF6A4FA3),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'File đề thi hiện không phải PDF hợp lệ.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Vui lòng nhờ giáo viên tải lại file PDF. Bạn vẫn có thể tải file hiện tại xuống để kiểm tra.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => _downloadBytes(bytes, _assignmentFileName),
+                    icon: const Icon(Icons.download_outlined),
+                    label: const Text('Tải file'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -313,14 +425,11 @@ class _TestItemPageState extends State<TestItemPage> {
             );
           }
 
-          return SfPdfViewer.memory(
-            snapshot.data!,
-            canShowPaginationDialog: true,
-            canShowScrollHead: true,
-            onDocumentLoadFailed: (_) {
-              _showSnackBar('Không mở được file PDF đề thi.');
-            },
-          );
+          if (!_looksLikePdf(snapshot.data!)) {
+            return _buildInvalidPdfPane(snapshot.data!);
+          }
+
+          return _buildBrowserPdfViewer(snapshot.data!);
         },
       ),
     );
