@@ -249,6 +249,16 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
     return controllers.any((controller) => controller.text.trim().isNotEmpty);
   }
 
+  int _assignmentQuestionCount(Map<String, dynamic> assignment) {
+    final questionCount = int.tryParse(
+      assignment['questionCount']?.toString() ?? '',
+    );
+    if (questionCount != null && questionCount > 0) {
+      return questionCount.clamp(1, 40).toInt();
+    }
+    return 40;
+  }
+
   Widget _buildNumberedAnswerBoxes(
     List<TextEditingController> controllers, {
     double maxHeight = 420,
@@ -536,7 +546,11 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
   }
 
   Future<void> _showSubmitDialog(Map<String, dynamic> assignment) async {
-    final answerControllers = List.generate(40, (_) => TextEditingController());
+    final questionCount = _assignmentQuestionCount(assignment);
+    final answerControllers = List.generate(
+      questionCount,
+      (_) => TextEditingController(),
+    );
     final currentSubmission = _submissionForAssignment(
       assignment['id']?.toString() ?? '',
     );
@@ -560,7 +574,7 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nhập đáp án theo số câu. Nếu đề chỉ có 20 câu thì chỉ cần điền 20 câu.',
+                        'Nhập đáp án theo $questionCount câu của đề.',
                         style: TextStyle(color: Color(0xFF555555)),
                       ),
                       SizedBox(height: 12),

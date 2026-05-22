@@ -33,6 +33,7 @@ class AiReadingAssignmentsPage extends StatefulWidget {
 class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
   final _titleController = TextEditingController();
   final _instructionController = TextEditingController();
+  final _questionCountController = TextEditingController();
   final _dateController = TextEditingController();
   final _timeController = TextEditingController();
   final Map<String, List<Map<String, dynamic>>> _submissionsByAssignmentId = {};
@@ -57,7 +58,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
   String get _pageTitle => _isTestMode ? 'Đề thi' : 'Bài tập';
   String get _assignmentTitle => _isTestMode ? 'Đề thi AI' : 'Bài đọc AI';
   String get _createPanelTitle =>
-      _isTestMode ? 'Tạo đề thi từ file PDF' : 'Tạo bài đọc AI từ file';
+      _isTestMode ? 'Tạo đề thi từ file' : 'Tạo bài đọc AI từ file';
   String get _emptyText =>
       _isTestMode ? 'Chưa có đề thi nào' : 'Chưa có bài đọc AI nào';
   String get _createdSnack =>
@@ -88,6 +89,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     _deadlineTimer?.cancel();
     _titleController.dispose();
     _instructionController.dispose();
+    _questionCountController.dispose();
     _dateController.dispose();
     _timeController.dispose();
     super.dispose();
@@ -338,8 +340,22 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     );
   }
 
+  int? _readQuestionCount(TextEditingController controller) {
+    final value = controller.text.trim();
+    if (value.isEmpty) return null;
+    final parsed = int.tryParse(value);
+    if (parsed == null || parsed < 1 || parsed > 40) return null;
+    return parsed;
+  }
+
   Future<void> _createAssignment() async {
     final dueAt = _combinedDueAt();
+    final questionCount = _readQuestionCount(_questionCountController);
+    if (_questionCountController.text.trim().isNotEmpty &&
+        questionCount == null) {
+      _showSnackBar('Số câu phải từ 1 đến 40.');
+      return;
+    }
     if (_titleController.text.trim().isEmpty ||
         _selectedClassId == null ||
         dueAt == null ||
@@ -360,6 +376,9 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
       request.fields['classId'] = _selectedClassId!;
       request.fields['dueAt'] = dueAt.toUtc().toIso8601String();
       request.fields['instruction'] = _instructionController.text.trim();
+      if (questionCount != null) {
+        request.fields['questionCount'] = questionCount.toString();
+      }
       request.files.add(
         http.MultipartFile.fromBytes(
           'file',
@@ -375,6 +394,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
         _showSnackBar(_createdSnack);
         _titleController.clear();
         _instructionController.clear();
+        _questionCountController.clear();
         _dateController.clear();
         _timeController.clear();
         setState(() {
@@ -413,6 +433,9 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     );
     final instructionController = TextEditingController(
       text: assignment['instruction']?.toString() ?? '',
+    );
+    final questionCountController = TextEditingController(
+      text: assignment['questionCount']?.toString() ?? '',
     );
     final parsedDueAt = DateTime.tryParse(
       assignment['dueAt']?.toString() ?? '',
@@ -552,6 +575,17 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                         ),
                       ),
                       SizedBox(height: 12),
+                      TextField(
+                        controller: questionCountController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Số câu',
+                          helperText:
+                              'Nhập 20 hoặc 40; bỏ trống để AI tự quét từ file đề.',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      SizedBox(height: 12),
                       Row(
                         children: [
                           OutlinedButton.icon(
@@ -591,6 +625,14 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                   onPressed: () async {
                     final dueDate = editDueDate;
                     final dueTime = editDueTime;
+                    final questionCount = _readQuestionCount(
+                      questionCountController,
+                    );
+                    if (questionCountController.text.trim().isNotEmpty &&
+                        questionCount == null) {
+                      _showSnackBar('Số câu phải từ 1 đến 40.');
+                      return;
+                    }
                     if (titleController.text.trim().isEmpty ||
                         editClassId == null ||
                         dueDate == null ||
@@ -611,6 +653,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                       editClassId!,
                       dueAt,
                       instructionController.text,
+                      questionCount,
                       replacementFile,
                     );
                     if (dialogContext.mounted) Navigator.pop(dialogContext);
@@ -626,6 +669,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
 
     titleController.dispose();
     instructionController.dispose();
+    questionCountController.dispose();
     dateController.dispose();
     timeController.dispose();
     classNameController.dispose();
@@ -637,6 +681,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     String classId,
     DateTime dueAt,
     String instruction,
+    int? questionCount,
     PlatformFile? file,
   ) async {
     final request = http.MultipartRequest(
@@ -651,6 +696,9 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     request.fields['classId'] = classId;
     request.fields['dueAt'] = dueAt.toUtc().toIso8601String();
     request.fields['instruction'] = instruction.trim();
+    if (questionCount != null) {
+      request.fields['questionCount'] = questionCount.toString();
+    }
     if (file?.bytes != null) {
       request.files.add(
         http.MultipartFile.fromBytes('file', file!.bytes!, filename: file.name),
@@ -1274,6 +1322,16 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
             maxLines: 3,
             decoration: InputDecoration(
               labelText: 'Ghi chú cho học sinh',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          SizedBox(height: 12),
+          TextField(
+            controller: _questionCountController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Số câu',
+              helperText: 'Nhập 20 hoặc 40; bỏ trống để AI tự quét từ file đề.',
               border: OutlineInputBorder(),
             ),
           ),

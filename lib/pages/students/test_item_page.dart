@@ -24,10 +24,7 @@ class TestItemPage extends StatefulWidget {
 }
 
 class _TestItemPageState extends State<TestItemPage> {
-  final List<TextEditingController> _answerControllers = List.generate(
-    40,
-    (_) => TextEditingController(),
-  );
+  List<TextEditingController> _answerControllers = [];
   late Future<Map<String, dynamic>> _dataFuture;
   late Future<Uint8List> _pdfFuture;
 
@@ -47,9 +44,7 @@ class _TestItemPageState extends State<TestItemPage> {
   @override
   void dispose() {
     _revokePdfObjectUrl();
-    for (final controller in _answerControllers) {
-      controller.dispose();
-    }
+    _disposeAnswerControllers();
     super.dispose();
   }
 
@@ -69,6 +64,7 @@ class _TestItemPageState extends State<TestItemPage> {
     }
     final assignment = result.map((key, value) => MapEntry('$key', value));
     _assignment = assignment;
+    _resizeAnswerControllers(_assignmentQuestionCount(assignment));
     _prefillAnswerControllers(assignment['mySubmissionText']?.toString() ?? '');
     return assignment;
   }
@@ -142,6 +138,37 @@ class _TestItemPageState extends State<TestItemPage> {
       }
       _answerControllers[number - 1].text = answer['answer']?.toString() ?? '';
     }
+  }
+
+  int _assignmentQuestionCount(Map<String, dynamic> assignment) {
+    final questionCount = int.tryParse(
+      assignment['questionCount']?.toString() ?? '',
+    );
+    if (questionCount != null && questionCount > 0) {
+      return questionCount.clamp(1, 40).toInt();
+    }
+    return 40;
+  }
+
+  void _resizeAnswerControllers(int questionCount) {
+    if (_answerControllers.length == questionCount) return;
+    final oldControllers = _answerControllers;
+    _answerControllers = List.generate(questionCount, (index) {
+      if (index < oldControllers.length) {
+        return oldControllers[index];
+      }
+      return TextEditingController();
+    });
+    for (var index = questionCount; index < oldControllers.length; index++) {
+      oldControllers[index].dispose();
+    }
+  }
+
+  void _disposeAnswerControllers() {
+    for (final controller in _answerControllers) {
+      controller.dispose();
+    }
+    _answerControllers = [];
   }
 
   String _encodedAnswers() {
@@ -345,6 +372,38 @@ class _TestItemPageState extends State<TestItemPage> {
         }
       }
       if (matched) return true;
+    }
+    return false;
+  }
+
+  bool _looksLikeImage(Uint8List bytes) {
+    if (bytes.length >= 8 &&
+        bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4E &&
+        bytes[3] == 0x47 &&
+        bytes[4] == 0x0D &&
+        bytes[5] == 0x0A &&
+        bytes[6] == 0x1A &&
+        bytes[7] == 0x0A) {
+      return true;
+    }
+    if (bytes.length >= 3 &&
+        bytes[0] == 0xFF &&
+        bytes[1] == 0xD8 &&
+        bytes[2] == 0xFF) {
+      return true;
+    }
+    if (bytes.length >= 12 &&
+        bytes[0] == 0x52 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46 &&
+        bytes[3] == 0x46 &&
+        bytes[8] == 0x57 &&
+        bytes[9] == 0x45 &&
+        bytes[10] == 0x42 &&
+        bytes[11] == 0x50) {
+      return true;
     }
     return false;
   }
@@ -572,13 +631,13 @@ class _TestItemPageState extends State<TestItemPage> {
               ),
               const SizedBox(height: 12),
               const Text(
-                'File đề thi hiện không phải PDF hợp lệ.',
+                'File đề thi hiện không phải PDF/ảnh hợp lệ.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               const Text(
-                'Vui lòng nhờ giáo viên tải lại file PDF. Bạn vẫn có thể tải file hiện tại xuống để kiểm tra.',
+                'Vui lòng nhờ giáo viên tải lại file PDF hoặc ảnh rõ nét. Bạn vẫn có thể tải file hiện tại xuống để kiểm tra.',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -598,6 +657,14 @@ class _TestItemPageState extends State<TestItemPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildImageViewer(Uint8List bytes) {
+    return InteractiveViewer(
+      minScale: 0.6,
+      maxScale: 4,
+      child: Center(child: Image.memory(bytes, fit: BoxFit.contain)),
     );
   }
 
@@ -747,18 +814,21 @@ class _TestItemPageState extends State<TestItemPage> {
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Text(
-                  'Không mở được file PDF đề thi.',
+                  'Không mở được file đề thi.',
                   textAlign: TextAlign.center,
                 ),
               ),
             );
           }
 
-          if (!_looksLikePdf(snapshot.data!)) {
-            return _buildInvalidPdfPane(snapshot.data!);
+          final bytes = snapshot.data!;
+          if (_looksLikePdf(bytes)) {
+            return _buildBrowserPdfViewer(bytes);
           }
-
-          return _buildBrowserPdfViewer(snapshot.data!);
+          if (_looksLikeImage(bytes)) {
+            return _buildImageViewer(bytes);
+          }
+          return _buildInvalidPdfPane(bytes);
         },
       ),
     );
@@ -770,6 +840,7 @@ class _TestItemPageState extends State<TestItemPage> {
     required dynamic score,
     required Map<String, dynamic> assignment,
   }) {
+    final questionCount = _assignmentQuestionCount(assignment);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -793,9 +864,9 @@ class _TestItemPageState extends State<TestItemPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Nhập đáp án theo số câu. Đề 20 câu thì chỉ điền 20 câu.',
-                  style: TextStyle(color: Color(0xFF555555)),
+                Text(
+                  'Nhập đáp án theo $questionCount câu của đề.',
+                  style: const TextStyle(color: Color(0xFF555555)),
                 ),
                 const SizedBox(height: 8),
                 Expanded(
