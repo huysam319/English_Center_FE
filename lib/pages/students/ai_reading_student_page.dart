@@ -188,6 +188,155 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
     return [];
   }
 
+  List<Map<String, dynamic>> _questionResultList(dynamic value) {
+    if (value is List) {
+      return value
+          .whereType<Map>()
+          .map((item) => item.map((key, value) => MapEntry('$key', value)))
+          .toList();
+    }
+    if (value is String && value.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(value);
+        return _questionResultList(decoded);
+      } catch (_) {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  List<Map<String, dynamic>> _answerListFromText(String text) {
+    if (text.trim().isEmpty) return [];
+    try {
+      final decoded = jsonDecode(text);
+      if (decoded is List) {
+        return decoded
+            .whereType<Map>()
+            .map((item) => item.map((key, value) => MapEntry('$key', value)))
+            .toList();
+      }
+    } catch (_) {
+      return [];
+    }
+    return [];
+  }
+
+  void _prefillAnswerControllers(
+    List<TextEditingController> controllers,
+    String text,
+  ) {
+    for (final answer in _answerListFromText(text)) {
+      final number = int.tryParse(answer['questionNumber']?.toString() ?? '');
+      if (number == null || number < 1 || number > controllers.length) {
+        continue;
+      }
+      controllers[number - 1].text = answer['answer']?.toString() ?? '';
+    }
+  }
+
+  String _encodeAnswerControllers(List<TextEditingController> controllers) {
+    final answers = <Map<String, dynamic>>[];
+    for (var index = 0; index < controllers.length; index++) {
+      final answer = controllers[index].text.trim();
+      if (answer.isEmpty) continue;
+      answers.add({'questionNumber': index + 1, 'answer': answer});
+    }
+    return jsonEncode(answers);
+  }
+
+  bool _hasAnyAnswer(List<TextEditingController> controllers) {
+    return controllers.any((controller) => controller.text.trim().isNotEmpty);
+  }
+
+  Widget _buildNumberedAnswerBoxes(
+    List<TextEditingController> controllers, {
+    double maxHeight = 420,
+  }) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: ListView.separated(
+        shrinkWrap: true,
+        itemCount: controllers.length,
+        separatorBuilder: (context, index) => SizedBox(height: 18),
+        itemBuilder: (context, index) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Color(0xFFEAF3FF),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '${index + 1}',
+                  style: TextStyle(
+                    color: Color(0xFF214AA5),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              SizedBox(width: 14),
+              Expanded(
+                child: TextField(
+                  controller: controllers[index],
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(color: Color(0xFFB8C2CC)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(color: Color(0xFFB8C2CC)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(
+                        color: Color(0xFF214AA5),
+                        width: 1.4,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  String _assignmentScoreText(Map<String, dynamic> assignment) {
+    final score = assignment['myScore'];
+    final correct = assignment['myCorrectAnswerCount'];
+    final total = assignment['myTotalQuestions'];
+    if (score == null) return '';
+    if (correct != null && total != null) {
+      return 'Điểm: $score / 100 - Đúng $correct / $total';
+    }
+    return 'Điểm: $score / 100';
+  }
+
+  String _resultScoreText(Map<String, dynamic> result) {
+    final score = result['score'];
+    final correct = result['correctAnswerCount'];
+    final total = result['totalQuestions'];
+    if (score == null) return '-';
+    if (correct != null && total != null) {
+      return '$score / 100 - Đúng $correct / $total';
+    }
+    return '$score / 100';
+  }
+
   Future<void> _downloadFile(String id, String fileName) async {
     final response = await http.get(
       Uri.parse(
@@ -236,6 +385,8 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
   Future<void> _showSubmissionDialog(Map<String, dynamic> submission) async {
     final text = submission['submissionText']?.toString() ?? '';
     final fileName = submission['fileName']?.toString() ?? '';
+    final questionResults = _questionResultList(submission['questionResults']);
+    final answerList = _answerListFromText(text);
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -250,24 +401,13 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
                 Text('Nộp lúc: ${_formatInstant(submission['submittedAt'])}'),
                 SizedBox(height: 12),
                 Text(
-                  'Nội dung bài làm',
+                  questionResults.isNotEmpty
+                      ? 'Kết quả từng câu'
+                      : 'Nội dung bài làm',
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  constraints: BoxConstraints(maxHeight: 260),
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Color(0xFFE0E0E0)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: SingleChildScrollView(
-                    child: SelectableText(
-                      text.trim().isEmpty ? 'Không có nội dung text' : text,
-                    ),
-                  ),
-                ),
+                _buildSubmittedAnswersView(text, answerList, questionResults),
                 SizedBox(height: 12),
                 if (fileName.isNotEmpty)
                   OutlinedButton.icon(
@@ -291,6 +431,101 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
     );
   }
 
+  Widget _buildSubmittedAnswersView(
+    String text,
+    List<Map<String, dynamic>> answerList,
+    List<Map<String, dynamic>> questionResults,
+  ) {
+    if (questionResults.isNotEmpty) {
+      return Container(
+        width: double.infinity,
+        constraints: BoxConstraints(maxHeight: 360),
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFFE0E0E0)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: questionResults.map((result) {
+              final correct = result['correct'] == true;
+              return Container(
+                margin: EdgeInsets.only(bottom: 8),
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: correct ? Color(0xFFE8F5E9) : Color(0xFFFFF1F1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: correct ? Color(0xFF81C784) : Color(0xFFE57373),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Câu ${result['questionNumber']}: ${correct ? 'Đúng' : 'Sai'}',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    SizedBox(height: 4),
+                    SelectableText(
+                      'Bạn trả lời: ${(result['studentAnswer']?.toString() ?? '').isEmpty ? '(trống)' : result['studentAnswer']}',
+                    ),
+                    if ((result['correctAnswer']?.toString() ?? '').isNotEmpty)
+                      SelectableText('Đáp án đúng: ${result['correctAnswer']}'),
+                    if ((result['explanation']?.toString() ?? '').isNotEmpty)
+                      SelectableText('Giải thích: ${result['explanation']}'),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      );
+    }
+
+    if (answerList.isNotEmpty) {
+      return Container(
+        width: double.infinity,
+        constraints: BoxConstraints(maxHeight: 300),
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFFE0E0E0)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: answerList
+                .map(
+                  (answer) => Padding(
+                    padding: EdgeInsets.only(bottom: 6),
+                    child: SelectableText(
+                      'Câu ${answer['questionNumber']}: ${answer['answer']}',
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      constraints: BoxConstraints(maxHeight: 260),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: SingleChildScrollView(
+        child: SelectableText(
+          text.trim().isEmpty ? 'Không có nội dung text' : text,
+        ),
+      ),
+    );
+  }
+
   void _saveBytes(String fileName, Uint8List bytes, String? contentType) {
     final blob = html.Blob([bytes], contentType ?? 'application/octet-stream');
     final url = html.Url.createObjectUrlFromBlob(blob);
@@ -301,7 +536,14 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
   }
 
   Future<void> _showSubmitDialog(Map<String, dynamic> assignment) async {
-    final answerController = TextEditingController();
+    final answerControllers = List.generate(40, (_) => TextEditingController());
+    final currentSubmission = _submissionForAssignment(
+      assignment['id']?.toString() ?? '',
+    );
+    _prefillAnswerControllers(
+      answerControllers,
+      currentSubmission?['submissionText']?.toString() ?? '',
+    );
     PlatformFile? answerFile;
     await showDialog<void>(
       context: context,
@@ -311,44 +553,47 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
             return AlertDialog(
               title: Text('Nộp bài Reading'),
               content: SizedBox(
-                width: 520,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: answerController,
-                      maxLines: 8,
-                      decoration: InputDecoration(
-                        labelText: 'Câu trả lời',
-                        border: OutlineInputBorder(),
+                width: 720,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Nhập đáp án theo số câu. Nếu đề chỉ có 20 câu thì chỉ cần điền 20 câu.',
+                        style: TextStyle(color: Color(0xFF555555)),
                       ),
-                    ),
-                    SizedBox(height: 12),
-                    Row(
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            final result = await FilePicker.platform.pickFiles(
-                              withData: true,
-                            );
-                            if (result == null || result.files.isEmpty) return;
-                            setDialogState(() {
-                              answerFile = result.files.first;
-                            });
-                          },
-                          icon: Icon(Icons.attach_file),
-                          label: Text('Chọn file bài làm'),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            answerFile?.name ?? 'Có thể nộp text hoặc file',
-                            overflow: TextOverflow.ellipsis,
+                      SizedBox(height: 12),
+                      _buildNumberedAnswerBoxes(answerControllers),
+                      SizedBox(height: 12),
+                      Row(
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              final result = await FilePicker.platform
+                                  .pickFiles(withData: true);
+                              if (result == null || result.files.isEmpty) {
+                                return;
+                              }
+                              setDialogState(() {
+                                answerFile = result.files.first;
+                              });
+                            },
+                            icon: Icon(Icons.attach_file),
+                            label: Text('Chọn file bài làm'),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              answerFile?.name ??
+                                  'Có thể nộp text, file hoặc cả hai',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -358,9 +603,16 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
+                    if (!_hasAnyAnswer(answerControllers) &&
+                        answerFile?.bytes == null) {
+                      _showSnackBar(
+                        'Vui lòng nhập ít nhất 1 câu trả lời hoặc chọn file bài làm.',
+                      );
+                      return;
+                    }
                     await _submitAssignment(
                       assignment['id'].toString(),
-                      answerController.text,
+                      _encodeAnswerControllers(answerControllers),
                       answerFile,
                     );
                     if (dialogContext.mounted) Navigator.pop(dialogContext);
@@ -373,7 +625,9 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
         );
       },
     );
-    answerController.dispose();
+    for (final controller in answerControllers) {
+      controller.dispose();
+    }
   }
 
   Future<void> _submitAssignment(
@@ -412,7 +666,15 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
           _upsertAssignment({
             'id': assignmentId,
             'mySubmissionStatus': submission['status'],
+            'mySubmissionId': submission['id'],
+            'mySubmissionText': submission['submissionText'],
+            'mySubmissionFileName': submission['fileName'],
+            'mySubmittedAt': submission['submittedAt'],
             'myScore': submission['score'],
+            'myTotalQuestions': submission['totalQuestions'],
+            'myAnsweredQuestionCount': submission['answeredQuestionCount'],
+            'myCorrectAnswerCount': submission['correctAnswerCount'],
+            'myQuestionResults': submission['questionResults'],
             'myRecommendation': submission['recommendation'],
             'myRecommendedResources': submission['recommendedResources'],
           });
@@ -586,7 +848,7 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
                   ],
                   if (graded)
                     Text(
-                      'Điểm: ${assignment['myScore']}',
+                      _assignmentScoreText(assignment),
                       style: TextStyle(fontWeight: FontWeight.w700),
                     )
                   else if (submitted)
@@ -637,7 +899,7 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
                     ),
                   ),
                   Text(
-                    result['score'] == null ? '-' : '${result['score']} / 100',
+                    _resultScoreText(result),
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ],

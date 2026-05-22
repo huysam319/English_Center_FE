@@ -246,6 +246,51 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     return [];
   }
 
+  List<Map<String, dynamic>> _questionResultList(dynamic value) {
+    if (value is List) {
+      return value
+          .whereType<Map>()
+          .map((item) => item.map((key, value) => MapEntry('$key', value)))
+          .toList();
+    }
+    if (value is String && value.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(value);
+        return _questionResultList(decoded);
+      } catch (_) {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  List<Map<String, dynamic>> _answerListFromText(String text) {
+    if (text.trim().isEmpty) return [];
+    try {
+      final decoded = jsonDecode(text);
+      if (decoded is List) {
+        return decoded
+            .whereType<Map>()
+            .map((item) => item.map((key, value) => MapEntry('$key', value)))
+            .toList();
+      }
+    } catch (_) {
+      return [];
+    }
+    return [];
+  }
+
+  String _submissionScoreText(Map<String, dynamic> submission) {
+    final score = submission['score'];
+    final correct = submission['correctAnswerCount'];
+    final total = submission['totalQuestions'];
+    if (score == null) return '-';
+    if (correct != null && total != null) {
+      return '$score / 100\nĐúng $correct / $total';
+    }
+    return '$score / 100';
+  }
+
   Future<void> _pickDueDate() async {
     final now = DateTime.now();
     final selected = await showDatePicker(
@@ -674,6 +719,8 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
         '${submission['lastName'] ?? ''} ${submission['firstName'] ?? ''}'
             .trim();
     final text = submission['submissionText']?.toString() ?? '';
+    final answerList = _answerListFromText(text);
+    final questionResults = _questionResultList(submission['questionResults']);
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -689,21 +736,16 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                   Text('Nộp lúc: ${_formatInstant(submission['submittedAt'])}'),
                   SizedBox(height: 12),
                   Text(
-                    'Nội dung text',
+                    questionResults.isNotEmpty
+                        ? 'Kết quả từng câu'
+                        : 'Nội dung text',
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    constraints: BoxConstraints(minHeight: 120),
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Color(0xFFE0E0E0)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: SelectableText(
-                      text.trim().isEmpty ? 'Không có nội dung text' : text,
-                    ),
+                  _buildSubmissionAnswersView(
+                    text,
+                    answerList,
+                    questionResults,
                   ),
                   SizedBox(height: 12),
                   if ((submission['fileName']?.toString() ?? '').isNotEmpty)
@@ -727,6 +769,99 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildSubmissionAnswersView(
+    String text,
+    List<Map<String, dynamic>> answerList,
+    List<Map<String, dynamic>> questionResults,
+  ) {
+    if (questionResults.isNotEmpty) {
+      return Container(
+        width: double.infinity,
+        constraints: BoxConstraints(maxHeight: 380),
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFFE0E0E0)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: questionResults.map((result) {
+              final correct = result['correct'] == true;
+              return Container(
+                margin: EdgeInsets.only(bottom: 8),
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: correct ? Color(0xFFE8F5E9) : Color(0xFFFFF1F1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: correct ? Color(0xFF81C784) : Color(0xFFE57373),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Câu ${result['questionNumber']}: ${correct ? 'Đúng' : 'Sai'}',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    SizedBox(height: 4),
+                    SelectableText(
+                      'Học sinh trả lời: ${(result['studentAnswer']?.toString() ?? '').isEmpty ? '(trống)' : result['studentAnswer']}',
+                    ),
+                    if ((result['correctAnswer']?.toString() ?? '').isNotEmpty)
+                      SelectableText('Đáp án đúng: ${result['correctAnswer']}'),
+                    if ((result['explanation']?.toString() ?? '').isNotEmpty)
+                      SelectableText('Giải thích: ${result['explanation']}'),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      );
+    }
+
+    if (answerList.isNotEmpty) {
+      return Container(
+        width: double.infinity,
+        constraints: BoxConstraints(maxHeight: 300),
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFFE0E0E0)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: answerList
+                .map(
+                  (answer) => Padding(
+                    padding: EdgeInsets.only(bottom: 6),
+                    child: SelectableText(
+                      'Câu ${answer['questionNumber']}: ${answer['answer']}',
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      constraints: BoxConstraints(minHeight: 120),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: SelectableText(
+        text.trim().isEmpty ? 'Không có nội dung text' : text,
+      ),
     );
   }
 
@@ -1286,7 +1421,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                         ),
                       ),
                       DataCell(Text(_formatInstant(submission['submittedAt']))),
-                      DataCell(Text(submission['score']?.toString() ?? '-')),
+                      DataCell(Text(_submissionScoreText(submission))),
                       DataCell(Text(submission['status']?.toString() ?? '-')),
                       DataCell(
                         TextButton.icon(
