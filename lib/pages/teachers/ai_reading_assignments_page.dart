@@ -781,6 +781,25 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     );
   }
 
+  Future<void> _viewAnswerKeyFile(String assignmentId, String fileName) async {
+    if (assignmentId.isEmpty) return;
+    final response = await http.get(
+      Uri.parse(
+        '${ApiService.baseUrl}/identity/ai-reading-assignments/$assignmentId/answer-key/file',
+      ),
+      headers: {'Authorization': 'Bearer ${authService.accessToken}'},
+    );
+    if (response.statusCode != 200) {
+      _showSnackBar('Không mở được file đáp án.');
+      return;
+    }
+    _openBytesForView(
+      fileName.isEmpty ? 'answer-key' : fileName,
+      response.bodyBytes,
+      response.headers['content-type'],
+    );
+  }
+
   Future<Map<String, dynamic>?> _loadAnswerKey(String assignmentId) async {
     if (assignmentId.isEmpty) return null;
     final response = await ApiService.get(
@@ -963,6 +982,37 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     html.Url.revokeObjectUrl(url);
   }
 
+  void _openBytesForView(
+    String fileName,
+    Uint8List bytes,
+    String? contentType,
+  ) {
+    final viewContentType = _viewContentType(fileName, contentType);
+    final blob = html.Blob([bytes], viewContentType);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    html.window.open(url, '_blank');
+    Timer(Duration(minutes: 2), () => html.Url.revokeObjectUrl(url));
+  }
+
+  String _viewContentType(String fileName, String? contentType) {
+    final normalized = contentType?.split(';').first.trim().toLowerCase();
+    if (normalized != null &&
+        normalized.isNotEmpty &&
+        normalized != 'application/octet-stream') {
+      return normalized;
+    }
+    final lowerName = fileName.toLowerCase();
+    if (lowerName.endsWith('.pdf')) return 'application/pdf';
+    if (lowerName.endsWith('.png')) return 'image/png';
+    if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
+      return 'image/jpeg';
+    }
+    if (lowerName.endsWith('.webp')) return 'image/webp';
+    if (lowerName.endsWith('.gif')) return 'image/gif';
+    if (lowerName.endsWith('.txt')) return 'text/plain';
+    return 'application/octet-stream';
+  }
+
   Future<void> _showAnswerKeyDialog(Map<String, dynamic> assignment) async {
     final assignmentId = assignment['id']?.toString() ?? '';
     final answerController = TextEditingController();
@@ -1040,15 +1090,39 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                               if (hasSavedAnswerFile &&
                                   savedAnswerFileName.isNotEmpty) ...[
                                 SizedBox(height: 8),
-                                OutlinedButton.icon(
-                                  onPressed: () => _downloadAnswerKeyFile(
-                                    assignmentId,
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    OutlinedButton.icon(
+                                      onPressed: () => _viewAnswerKeyFile(
+                                        assignmentId,
+                                        savedAnswerFileName,
+                                      ),
+                                      icon: Icon(Icons.visibility_outlined),
+                                      label: Text('Xem đáp án'),
+                                    ),
+                                    OutlinedButton.icon(
+                                      onPressed: () => _downloadAnswerKeyFile(
+                                        assignmentId,
+                                        savedAnswerFileName,
+                                      ),
+                                      icon: Icon(Icons.download_outlined),
+                                      label: Text(
+                                        'Tải file: $savedAnswerFileName',
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.only(top: 4),
+                                  child: Text(
                                     savedAnswerFileName,
-                                  ),
-                                  icon: Icon(Icons.download_outlined),
-                                  label: Text(
-                                    'Tải file đáp án: $savedAnswerFileName',
-                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Color(0xFF5F6368),
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ),
                               ],
