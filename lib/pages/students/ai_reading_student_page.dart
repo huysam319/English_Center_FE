@@ -60,7 +60,7 @@ class _AiReadingStudentPageState extends State<AiReadingStudentPage> {
       token: authService.accessToken,
     );
     final resultsResponse = await ApiService.get(
-      '/identity/ai-reading-assignments/student/results',
+      '/identity/ai-reading-assignments/student/results?kind=READING',
       token: authService.accessToken,
     );
     return {
