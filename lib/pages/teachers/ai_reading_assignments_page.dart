@@ -759,6 +759,47 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     );
   }
 
+  Future<void> _downloadAnswerKeyFile(
+    String assignmentId,
+    String fileName,
+  ) async {
+    if (assignmentId.isEmpty) return;
+    final response = await http.get(
+      Uri.parse(
+        '${ApiService.baseUrl}/identity/ai-reading-assignments/$assignmentId/answer-key/file',
+      ),
+      headers: {'Authorization': 'Bearer ${authService.accessToken}'},
+    );
+    if (response.statusCode != 200) {
+      _showSnackBar('Tải file đáp án thất bại.');
+      return;
+    }
+    _saveBytes(
+      fileName.isEmpty ? 'answer-key' : fileName,
+      response.bodyBytes,
+      response.headers['content-type'],
+    );
+  }
+
+  Future<Map<String, dynamic>?> _loadAnswerKey(String assignmentId) async {
+    if (assignmentId.isEmpty) return null;
+    final response = await ApiService.get(
+      '/identity/ai-reading-assignments/$assignmentId/answer-key',
+      token: authService.accessToken,
+    );
+    final decoded = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+    if (response.statusCode == 200 && decoded['code'] == 1000) {
+      final result = decoded['result'];
+      if (result is Map) {
+        return result.map((key, value) => MapEntry('$key', value));
+      }
+    }
+    _showSnackBar(
+      decoded['message']?.toString() ?? 'Không tải được đáp án đã lưu.',
+    );
+    return null;
+  }
+
   Future<void> _showSubmissionDialog(
     String assignmentId,
     Map<String, dynamic> submission,
@@ -923,54 +964,140 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
   }
 
   Future<void> _showAnswerKeyDialog(Map<String, dynamic> assignment) async {
+    final assignmentId = assignment['id']?.toString() ?? '';
     final answerController = TextEditingController();
+    var savedAnswerText = '';
+    var savedAnswerFileName = assignment['answerKeyFileName']?.toString() ?? '';
+    var hasSavedAnswerFile = savedAnswerFileName.isNotEmpty;
     PlatformFile? answerFile;
+    final savedAnswerKey = await _loadAnswerKey(assignmentId);
+    if (savedAnswerKey != null) {
+      savedAnswerText = savedAnswerKey['answerKeyText']?.toString() ?? '';
+      savedAnswerFileName =
+          savedAnswerKey['answerKeyFileName']?.toString() ?? '';
+      hasSavedAnswerFile = savedAnswerKey['hasAnswerKeyFile'] == true;
+      answerController.text = savedAnswerText;
+    }
+    if (!mounted) {
+      answerController.dispose();
+      return;
+    }
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text('Tải lên đáp án'),
+              title: Text(
+                (assignment['hasAnswerKey'] == true ||
+                        savedAnswerText.isNotEmpty)
+                    ? 'Xem / cập nhật đáp án'
+                    : 'Tải lên đáp án',
+              ),
               content: SizedBox(
                 width: 520,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: answerController,
-                      maxLines: 6,
-                      decoration: InputDecoration(
-                        labelText: 'Đáp án hoặc kết quả chuẩn',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Row(
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            final result = await FilePicker.platform.pickFiles(
-                              withData: true,
-                            );
-                            if (result == null || result.files.isEmpty) return;
-                            setDialogState(() {
-                              answerFile = result.files.first;
-                            });
-                          },
-                          icon: Icon(Icons.attach_file),
-                          label: Text('Chọn file'),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            answerFile?.name ?? 'Chưa chọn file',
-                            overflow: TextOverflow.ellipsis,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (savedAnswerText.isNotEmpty ||
+                          hasSavedAnswerFile ||
+                          savedAnswerFileName.isNotEmpty) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF8F5FF),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Color(0xFFE2D7F3)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Đáp án đã lưu',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                              if (savedAnswerText.isNotEmpty) ...[
+                                SizedBox(height: 8),
+                                Container(
+                                  constraints: BoxConstraints(maxHeight: 160),
+                                  width: double.infinity,
+                                  padding: EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Color(0xFFE0E0E0),
+                                    ),
+                                  ),
+                                  child: SingleChildScrollView(
+                                    child: SelectableText(savedAnswerText),
+                                  ),
+                                ),
+                              ],
+                              if (hasSavedAnswerFile &&
+                                  savedAnswerFileName.isNotEmpty) ...[
+                                SizedBox(height: 8),
+                                OutlinedButton.icon(
+                                  onPressed: () => _downloadAnswerKeyFile(
+                                    assignmentId,
+                                    savedAnswerFileName,
+                                  ),
+                                  icon: Icon(Icons.download_outlined),
+                                  label: Text(
+                                    'Tải file đáp án: $savedAnswerFileName',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
+                        SizedBox(height: 16),
                       ],
-                    ),
-                  ],
+                      TextField(
+                        controller: answerController,
+                        maxLines: 6,
+                        decoration: InputDecoration(
+                          labelText: 'Đáp án hoặc kết quả chuẩn',
+                          helperText:
+                              'Có thể chỉnh nội dung cũ rồi bấm Lưu để cập nhật.',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              final result = await FilePicker.platform
+                                  .pickFiles(withData: true);
+                              if (result == null || result.files.isEmpty) {
+                                return;
+                              }
+                              setDialogState(() {
+                                answerFile = result.files.first;
+                              });
+                            },
+                            icon: Icon(Icons.attach_file),
+                            label: Text('Chọn file'),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              answerFile?.name ??
+                                  (savedAnswerFileName.isNotEmpty
+                                      ? 'File hiện tại: $savedAnswerFileName'
+                                      : 'Chưa chọn file'),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -981,7 +1108,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                 ElevatedButton(
                   onPressed: () async {
                     await _uploadAnswerKey(
-                      assignment['id'].toString(),
+                      assignmentId,
                       answerController.text,
                       answerFile,
                     );
