@@ -154,50 +154,62 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: 24),
-                    TextField(
-                      controller: usernameController,
-                      decoration: InputDecoration(
-                        labelText: "Username",
-                        errorText: _usernameError
-                            ? 'Vui lòng nhập tên đăng nhập'
-                            : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.red),
-                        ),
-                        focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.red, width: 2),
+                    Semantics(
+                      label: "username_text_field",
+                      textField: true,
+                      child: TextField(
+                        controller: usernameController,
+                        decoration: InputDecoration(
+                          labelText: "Username",
+                          errorText: _usernameError
+                              ? 'Vui lòng nhập tên đăng nhập'
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.red),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.red, width: 2),
+                          ),
                         ),
                       ),
                     ),
                     SizedBox(height: 16),
-                    PasswordField(
-                      controller: passwordController,
-                      showError: _passwordError,
-                      labelText: "Password",
-                      errorText: "Vui lòng nhập mật khẩu",
+                    Semantics(
+                      label: "password_text_field",
+                      textField: true,
+                      child: PasswordField(
+                        controller: passwordController,
+                        showError: _passwordError,
+                        labelText: "Password",
+                        errorText: "Vui lòng nhập mật khẩu",
+                      ),
                     ),
                     SizedBox(height: 16),
-                    SizedBox(
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: _handleLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF1E40AF),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                    Semantics(
+                      label: "login_button",
+                      button: true,
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _handleLogin,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF1E40AF),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          "Đăng nhập",
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w500,
+                          child: Text(
+                            "Đăng nhập",
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
