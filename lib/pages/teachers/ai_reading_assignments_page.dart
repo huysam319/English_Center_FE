@@ -154,6 +154,14 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
         _submissionsByAssignmentId
           ..clear()
           ..addAll(submissions);
+        _gradingAssignmentIds.removeWhere(
+          (assignmentId) =>
+              !(submissions[assignmentId]?.any(
+                    (submission) =>
+                        submission['status']?.toString() == 'GRADING',
+                  ) ??
+                  false),
+        );
         _loading = false;
         _loadError = null;
       });
@@ -283,6 +291,9 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
   }
 
   String _submissionScoreText(Map<String, dynamic> submission) {
+    final status = submission['status']?.toString();
+    if (status == 'GRADING') return 'Đang chấm...';
+    if (status == 'FAILED') return 'Lỗi chấm';
     final score = submission['score'];
     final correct = submission['correctAnswerCount'];
     final total = submission['totalQuestions'];
@@ -291,6 +302,29 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
       return '$score / 100\nĐúng $correct / $total';
     }
     return '$score / 100';
+  }
+
+  bool _hasGradingSubmission(String assignmentId) {
+    return _submissionsByAssignmentId[assignmentId]?.any(
+          (submission) => submission['status']?.toString() == 'GRADING',
+        ) ??
+        false;
+  }
+
+  int _gradedSubmissionCount(List<Map<String, dynamic>> submissions) {
+    return submissions
+        .where((submission) => submission['score'] != null)
+        .length;
+  }
+
+  String _submissionStatusText(dynamic status) {
+    return switch (status?.toString()) {
+      'GRADING' => 'Đang chấm',
+      'GRADED' => 'Đã chấm',
+      'FAILED' => 'Lỗi chấm',
+      'SUBMITTED' => 'Đã nộp',
+      _ => status?.toString() ?? '-',
+    };
   }
 
   Future<void> _pickDueDate() async {
@@ -1240,7 +1274,10 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
   }
 
   Future<void> _gradeAssignment(String assignmentId) async {
-    if (_gradingAssignmentIds.contains(assignmentId)) return;
+    if (_gradingAssignmentIds.contains(assignmentId) ||
+        _hasGradingSubmission(assignmentId)) {
+      return;
+    }
     setState(() => _gradingAssignmentIds.add(assignmentId));
     try {
       final response = await ApiService.post(
@@ -1250,7 +1287,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
       final decoded = jsonDecode(response.body);
       if (response.statusCode == 200 && decoded['code'] == 1000) {
         final submissions = _resultList(response.body);
-        _showSnackBar('Đã chấm điểm bằng AI.');
+        _showSnackBar('Đã bắt đầu chấm AI. Hệ thống sẽ tự cập nhật khi xong.');
         setState(() {
           _submissionsByAssignmentId[assignmentId] = submissions;
           final index = _assignments.indexWhere(
@@ -1260,21 +1297,61 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
             _assignments[index] = {
               ..._assignments[index],
               'submissionCount': submissions.length,
-              'gradedCount': submissions
-                  .where((submission) => submission['score'] != null)
-                  .length,
-              'gradedAt': DateTime.now().toUtc().toIso8601String(),
+              'gradedCount': _gradedSubmissionCount(submissions),
             };
           }
         });
-        unawaited(_refreshData());
+        unawaited(_pollGradingUntilFinished(assignmentId));
       } else {
         _showSnackBar(decoded['message']?.toString() ?? 'Chấm điểm thất bại.');
       }
     } finally {
       if (mounted) {
-        setState(() => _gradingAssignmentIds.remove(assignmentId));
+        setState(() {
+          if (!_hasGradingSubmission(assignmentId)) {
+            _gradingAssignmentIds.remove(assignmentId);
+          }
+        });
       }
+    }
+  }
+
+  Future<void> _pollGradingUntilFinished(String assignmentId) async {
+    for (var attempt = 0; attempt < 60; attempt++) {
+      await Future.delayed(Duration(seconds: 5));
+      if (!mounted) return;
+      try {
+        final submissions = await _loadSubmissions(assignmentId);
+        if (!mounted) return;
+        final stillGrading = submissions.any(
+          (submission) => submission['status']?.toString() == 'GRADING',
+        );
+        setState(() {
+          _submissionsByAssignmentId[assignmentId] = submissions;
+          final index = _assignments.indexWhere(
+            (item) => item['id']?.toString() == assignmentId,
+          );
+          if (index >= 0) {
+            _assignments[index] = {
+              ..._assignments[index],
+              'submissionCount': submissions.length,
+              'gradedCount': _gradedSubmissionCount(submissions),
+              if (!stillGrading)
+                'gradedAt': DateTime.now().toUtc().toIso8601String(),
+            };
+          }
+          if (!stillGrading) {
+            _gradingAssignmentIds.remove(assignmentId);
+          }
+        });
+        if (!stillGrading) return;
+      } catch (_) {
+        // Keep polling; transient network errors should not break the grading UI.
+      }
+    }
+    if (mounted) {
+      setState(() => _gradingAssignmentIds.remove(assignmentId));
+      _showSnackBar('AI vẫn đang chấm lâu hơn dự kiến. Vui lòng tải lại sau.');
     }
   }
 
@@ -1572,7 +1649,8 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
   Widget _buildAssignmentTile(Map<String, dynamic> assignment) {
     final id = assignment['id'].toString();
     final locked = assignment['locked'] == true;
-    final grading = _gradingAssignmentIds.contains(id);
+    final grading =
+        _gradingAssignmentIds.contains(id) || _hasGradingSubmission(id);
     final submissions = _submissionsByAssignmentId[id];
     return Container(
       margin: EdgeInsets.only(bottom: 10),
@@ -1598,7 +1676,9 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
             children: [
               Text('Bài nộp: ${assignment['submissionCount'] ?? 0}'),
               SizedBox(width: 16),
-              Text('Đã chấm: ${assignment['gradedCount'] ?? 0}'),
+              Text(
+                'Đã chấm: ${submissions == null ? assignment['gradedCount'] ?? 0 : _gradedSubmissionCount(submissions)}',
+              ),
               SizedBox(width: 16),
               Text(
                 'Đáp án: ${assignment['hasAnswerKey'] == true ? 'Đã có' : 'Chưa có'}',
@@ -1681,7 +1761,9 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                       ),
                       DataCell(Text(_formatInstant(submission['submittedAt']))),
                       DataCell(Text(_submissionScoreText(submission))),
-                      DataCell(Text(submission['status']?.toString() ?? '-')),
+                      DataCell(
+                        Text(_submissionStatusText(submission['status'])),
+                      ),
                       DataCell(
                         TextButton.icon(
                           onPressed: () =>
