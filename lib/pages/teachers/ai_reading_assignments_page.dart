@@ -615,7 +615,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                         decoration: InputDecoration(
                           labelText: 'Số câu',
                           helperText:
-                              'Nhập 20 hoặc 40; bỏ trống để AI tự quét từ file đề.',
+                              'Nhập số câu nếu biết; bỏ trống sẽ mặc định 40.',
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -1609,7 +1609,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: 'Số câu',
-              helperText: 'Nhập 20 hoặc 40; bỏ trống để AI tự quét từ file đề.',
+              helperText: 'Nhập số câu nếu biết; bỏ trống sẽ mặc định 40.',
               border: OutlineInputBorder(),
             ),
           ),

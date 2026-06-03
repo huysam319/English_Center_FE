@@ -32,8 +32,8 @@ class _TeacherClassAttendancesPageState
   final ScrollController _horizontalController = ScrollController();
   final Map<String, bool> _attendanceMap = {};
   final Map<String, Map<String, dynamic>> _studentsById = {};
-  final List<Map<String, dynamic>> _recentAttendanceRows = [];
   late final Future<Map<String, dynamic>> _classDataFuture;
+  bool _savingAttendance = false;
 
   static String _asCellText(Object? value) {
     if (value == null) return '';
@@ -41,6 +41,13 @@ class _TeacherClassAttendancesPageState
     if (value is num || value is bool) return value.toString();
     if (value is DateTime) return value.toIso8601String();
     return jsonEncode(value);
+  }
+
+  @override
+  void dispose() {
+    _verticalController.dispose();
+    _horizontalController.dispose();
+    super.dispose();
   }
 
   @override
@@ -253,37 +260,13 @@ class _TeacherClassAttendancesPageState
   ) {
     final seen = <String>{};
     final merged = <Map<String, dynamic>>[];
-    for (final item in [..._recentAttendanceRows, ...fetchedItems]) {
+    for (final item in fetchedItems) {
       final key = _attendanceHistoryKey(item);
       if (seen.add(key)) {
         merged.add(item);
       }
     }
     return merged;
-  }
-
-  List<Map<String, dynamic>> _attendanceHistoryItemsFromSave(dynamic data) {
-    final result = data is Map ? data['result'] : null;
-    final rawItems = result is Map ? result['attendances'] : null;
-    if (rawItems is! List) return <Map<String, dynamic>>[];
-
-    final session = _selectedClassSession ?? <String, dynamic>{};
-    return rawItems.whereType<Map>().map((rawItem) {
-      final item = rawItem.map((key, value) => MapEntry('$key', value));
-      final studentId = item['studentId']?.toString() ?? '';
-      final student = _studentsById[studentId] ?? <String, dynamic>{};
-      return <String, dynamic>{
-        ...item,
-        'classSessionId': _selectedClassSessionId,
-        'daysOfWeek': session['daysOfWeek'],
-        'startTime': session['startTime'],
-        'endTime': session['endTime'],
-        'topic': session['topic'],
-        'username': student['username'],
-        'firstName': student['firstName'],
-        'lastName': student['lastName'],
-      };
-    }).toList();
   }
 
   String _shortTime(Object? value) {
@@ -937,82 +920,91 @@ class _TeacherClassAttendancesPageState
                   children: [
                     Expanded(child: Container()),
                     ElevatedButton(
-                      onPressed: () async {
-                        if (!_formKey.currentState!.validate()) {
-                          return;
-                        }
+                      onPressed: _savingAttendance
+                          ? null
+                          : () async {
+                              if (!_formKey.currentState!.validate()) {
+                                return;
+                              }
 
-                        List<String> absentStudentIds = _attendanceMap.entries
-                            .where((entry) => entry.value == true)
-                            .map((entry) => entry.key)
-                            .toList();
-                        var response = await ApiService.post(
-                          '/identity/attendances',
-                          token: authService.accessToken,
-                          body: {
-                            'classSessionId': _selectedClassSessionId,
-                            'studentId': absentStudentIds,
-                            'note': "",
-                          },
-                        );
+                              setState(() => _savingAttendance = true);
+                              try {
+                                List<String> absentStudentIds = _attendanceMap
+                                    .entries
+                                    .where((entry) => entry.value == true)
+                                    .map((entry) => entry.key)
+                                    .toList();
+                                var response = await ApiService.post(
+                                  '/identity/attendances',
+                                  token: authService.accessToken,
+                                  body: {
+                                    'classSessionId': _selectedClassSessionId,
+                                    'studentId': absentStudentIds,
+                                    'note': "",
+                                  },
+                                );
 
-                        if (response.statusCode == 401) {
-                          var refreshResponse = await ApiService.post(
-                            '/identity/auth/refresh',
-                            body: {'token': authService.accessToken},
-                          );
+                                if (response.statusCode == 401) {
+                                  var refreshResponse = await ApiService.post(
+                                    '/identity/auth/refresh',
+                                    body: {'token': authService.accessToken},
+                                  );
 
-                          var refreshData = jsonDecode(refreshResponse.body);
-                          if (refreshData['code'] == 1000) {
-                            final newToken = refreshData['result']['token'];
-                            await authService.setAuth(newToken);
+                                  var refreshData = jsonDecode(
+                                    refreshResponse.body,
+                                  );
+                                  if (refreshData['code'] == 1000) {
+                                    final newToken =
+                                        refreshData['result']['token'];
+                                    await authService.setAuth(newToken);
 
-                            response = await ApiService.post(
-                              '/identity/attendances',
-                              token: authService.accessToken,
-                              body: {
-                                'classSessionId': _selectedClassSessionId,
-                                'studentId': absentStudentIds,
-                                'note': "",
-                              },
-                            );
-                          } else {
-                            await authService.clearAuth();
-                            throw UnauthorizedException();
-                          }
-                        }
+                                    response = await ApiService.post(
+                                      '/identity/attendances',
+                                      token: authService.accessToken,
+                                      body: {
+                                        'classSessionId':
+                                            _selectedClassSessionId,
+                                        'studentId': absentStudentIds,
+                                        'note': "",
+                                      },
+                                    );
+                                  } else {
+                                    await authService.clearAuth();
+                                    throw UnauthorizedException();
+                                  }
+                                }
 
-                        final data = jsonDecode(response.body);
-                        if (data != null && data['code'] == 1000) {
-                          final savedHistoryItems =
-                              _attendanceHistoryItemsFromSave(data);
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Điểm danh thành công')),
-                          );
-                          setState(() {
-                            _recentAttendanceRows
-                              ..removeWhere(
-                                (existing) => savedHistoryItems.any(
-                                  (saved) =>
-                                      _attendanceHistoryKey(saved) ==
-                                      _attendanceHistoryKey(existing),
-                                ),
-                              )
-                              ..insertAll(0, savedHistoryItems);
-                            _attendanceMap.clear();
-                            _studentsDataFuture = _loadStudentsByClassSessionId(
-                              _selectedClassSessionId!,
-                            );
-                            _historyDataFuture = _loadAttendanceHistory();
-                          });
-                        } else {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Điểm danh thất bại')),
-                          );
-                        }
-                      },
+                                final data = jsonDecode(response.body);
+                                if (data != null && data['code'] == 1000) {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Điểm danh thành công'),
+                                    ),
+                                  );
+                                  setState(() {
+                                    _attendanceMap.clear();
+                                    _studentsDataFuture =
+                                        _loadStudentsByClassSessionId(
+                                          _selectedClassSessionId!,
+                                        );
+                                    _historyDataFuture =
+                                        _loadAttendanceHistory();
+                                  });
+                                } else {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Điểm danh thất bại'),
+                                    ),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _savingAttendance = false);
+                                }
+                              }
+                            },
                       style: ButtonStyle(
                         backgroundColor: WidgetStateProperty.all(
                           Color(0xFF1E40AF),
@@ -1029,7 +1021,9 @@ class _TeacherClassAttendancesPageState
                           ),
                         ),
                       ),
-                      child: Text('Lưu điểm danh'),
+                      child: Text(
+                        _savingAttendance ? 'Đang lưu...' : 'Lưu điểm danh',
+                      ),
                     ),
                     Expanded(child: Container()),
                   ],
