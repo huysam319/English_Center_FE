@@ -29,14 +29,6 @@ class _WritingTaskGradingState extends State<WritingTaskGrading> {
   final List<double> scores =
       List.generate(19, (index) => index * 0.5);
 
-  // final List<String> errorTypes = [
-  //   'Grammar',
-  //   'Vocabulary',
-  //   'Spelling',
-  //   'Task Response',
-  //   'Coherence',
-  // ];
-
   double? calculateOverall() {
     if ([widget.gradeModel.task, widget.gradeModel.coherence, widget.gradeModel.lexical, widget.gradeModel.grammar]
         .any((e) => e == null)) return null;
@@ -207,17 +199,101 @@ class _WritingTaskGradingState extends State<WritingTaskGrading> {
               ),
               const SizedBox(height: 12),
 
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Chấm điểm",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Chấm điểm",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      var response = await ApiService.post(
+                        '/identity/writing-grading/auto',
+                        token: authService.accessToken,
+                        body: {
+                          'question': result['text'],
+                          'answer': widget.answerData['textAnswer'],
+                          'imageUrl': result['imageUrl'],
+                        }
+                      );
+
+                      if (response.statusCode == 401) {
+                        var refreshResponse = await ApiService.post(
+                          '/identity/auth/refresh',
+                          body: {'token': authService.accessToken},
+                        );
+
+                        var refreshData = jsonDecode(refreshResponse.body);
+                        if (refreshData['code'] == 1000) {
+                          final newToken = refreshData['result']['token'];
+                          await authService.setAuth(newToken);
+
+                          response = await ApiService.post(
+                            '/identity/writing-grading/auto',
+                            token: authService.accessToken,
+                            body: {
+                              'question': result['text'],
+                              'answer': widget.answerData['textAnswer'],
+                              'imageUrl': result['imageUrl'],
+                            }
+                          );
+                        } else {
+                          await authService.clearAuth();
+                          throw UnauthorizedException();
+                        }
+                      }
+
+                      final data = jsonDecode(response.body);
+                      if (data != null && data['code'] == 1000) {
+                        setState(() {
+                          widget.gradeModel.task = data['result']['trScore'];
+                          widget.gradeModel.coherence = data['result']['ccScore'];
+                          widget.gradeModel.lexical = data['result']['lrScore'];
+                          widget.gradeModel.grammar = data['result']['graScore'];
+                          widget.gradeModel.overall = calculateOverall();
+                          widget.gradeModel.errors = (data['result']['errors'] as List<dynamic>).map((e) => WritingError(
+                            type: e['studentErrorType'],
+                            description: e['errorDescription'],
+                          )).toList();
+                          widget.gradeModel.commentController.document = Document()..insert(0, data['result']['feedback'] ?? '');
+                        });
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Chấm bài Writing Task ${result['partNumber']} thành công')),
+                        );
+                      } else {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Chấm bài Writing Task ${result['partNumber']} thất bại')),
+                        );
+                      }
+                    },
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.all(
+                        Color(0xFF1E40AF),
+                      ),
+                      foregroundColor: WidgetStateProperty.all(Colors.white),
+                      overlayColor: WidgetStateProperty.all(
+                        Colors.transparent,
+                      ),
+                      minimumSize: WidgetStateProperty.all(Size(100, 40)),
+                      elevation: WidgetStateProperty.all(0),
+                      shape: WidgetStateProperty.all(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    child: const Text("Chấm tự động"),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
+
+              const SizedBox(height: 12),
 
               Row(
                 children: [
