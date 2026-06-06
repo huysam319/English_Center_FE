@@ -32,7 +32,7 @@ class _LearningSupportQuizPageState extends State<LearningSupportQuizPage> {
 
   Future<Map<String, dynamic>> _loadQuizData() async {
     var response = await ApiService.get(
-      "/identity/learning-support",
+      "/identity/learning-support/quiz",
       token: authService.accessToken,
     );
 
@@ -48,7 +48,7 @@ class _LearningSupportQuizPageState extends State<LearningSupportQuizPage> {
         await authService.setAuth(newToken);
 
         response = await ApiService.get(
-          "/identity/learning-support",
+          "/identity/learning-support/quiz",
           token: authService.accessToken,
         );
       } else {
@@ -186,7 +186,7 @@ class _LearningSupportQuizPageState extends State<LearningSupportQuizPage> {
                       ElevatedButton(
                         onPressed: () async {
                           var response = await ApiService.post(
-                            "/identity/learning-support",
+                            "/identity/learning-support/quiz",
                             token: authService.accessToken,
                             body: {
                               "studentReviewErrors": skills
@@ -235,7 +235,7 @@ class _LearningSupportQuizPageState extends State<LearningSupportQuizPage> {
                               await authService.setAuth(newToken);
 
                               response = await ApiService.post(
-                                "/identity/learning-support",
+                                "/identity/learning-support/quiz",
                                 token: authService.accessToken,
                                 body: {
                                   "studentReviewErrors": skills
