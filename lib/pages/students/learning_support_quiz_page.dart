@@ -101,7 +101,7 @@ class _LearningSupportQuizPageState extends State<LearningSupportQuizPage> {
   Widget build(BuildContext context) {
     return Title(
       color: Colors.black,
-      title: "Hỗ trợ học tập",
+      title: "Quiz ôn tập lỗi sai",
       child: SiteLayout(
         menuNo: 9,
         content: Container(
@@ -137,10 +137,11 @@ class _LearningSupportQuizPageState extends State<LearningSupportQuizPage> {
                   padding: const EdgeInsets.all(20),
                   children: [
                     Text(
-                      'Bài quiz ôn tập lỗi sai',
+                      'Quiz ôn tập lỗi sai',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1E40AF),
                       ),
                     ),
 
@@ -183,128 +184,134 @@ class _LearningSupportQuizPageState extends State<LearningSupportQuizPage> {
                     SizedBox(height: 20),
 
                     if (!submitted)
-                      ElevatedButton(
-                        onPressed: () async {
-                          var response = await ApiService.post(
-                            "/identity/learning-support/quiz",
-                            token: authService.accessToken,
-                            body: {
-                              "studentReviewErrors": skills
-                                  .map((skill) => skill['errorType'])
-                                  .toList(),
-                              "quizQuestions": questions
-                                  .map((question) { 
-                                    final int questionOrder = question['order'];
-                                    final List choices = question['choices'];
-                                    final selectedChoiceOrder =
-                                        selectedAnswers[questionOrder];
-
-                                    Map<String, dynamic>? selectedChoice;
-
-                                    try {
-                                      selectedChoice = choices.firstWhere(
-                                        (choice) => choice['order'] == selectedChoiceOrder,
-                                      );
-                                    } catch (_) {
-                                      selectedChoice = null;
-                                    }
-
-                                    return {
-                                      "order": question['order'],
-                                      "errorTypes": question['errorTypes'],
-                                      "content": question['content'],
-                                      "correctAnswer": question['answer'],
-                                      "isCorrect": (selectedChoice != null && selectedChoice['isCorrect'] == true) 
-                                          ? true 
-                                          : false,
-                                    };
-                                  })
-                                  .toList(),
-                            },
-                          );
-
-                          if (response.statusCode == 401) {
-                            var refreshResponse = await ApiService.post(
-                              '/identity/auth/refresh',
-                              body: {'token': authService.accessToken},
-                            );
-
-                            var refreshData = jsonDecode(refreshResponse.body);
-                            if (refreshData['code'] == 1000) {
-                              final newToken = refreshData['result']['token'];
-                              await authService.setAuth(newToken);
-
-                              response = await ApiService.post(
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              var response = await ApiService.post(
                                 "/identity/learning-support/quiz",
                                 token: authService.accessToken,
                                 body: {
-                                  "studentReviewErrors": skills
-                                      .map((skill) => skill['errorType'])
-                                      .toList(),
-                                  "quizQuestions": questions
-                                      .map((question) { 
-                                        final int questionOrder = question['order'];
-                                        final List choices = question['choices'];
-                                        final selectedChoiceOrder =
-                                            selectedAnswers[questionOrder];
+                                "studentReviewErrors": skills
+                                    .map((skill) => skill['errorType'])
+                                    .toList(),
+                                "quizQuestions": questions
+                                    .map((question) { 
+                                      final int questionOrder = question['order'];
+                                      final List choices = question['choices'];
+                                      final selectedChoiceOrder =
+                                          selectedAnswers[questionOrder];
 
-                                        Map<String, dynamic>? selectedChoice;
+                                      Map<String, dynamic>? selectedChoice;
 
-                                        try {
-                                          selectedChoice = choices.firstWhere(
-                                            (choice) => choice['order'] == selectedChoiceOrder,
-                                          );
-                                        } catch (_) {
-                                          selectedChoice = null;
-                                        }
+                                      try {
+                                        selectedChoice = choices.firstWhere(
+                                          (choice) => choice['order'] == selectedChoiceOrder,
+                                        );
+                                      } catch (_) {
+                                        selectedChoice = null;
+                                      }
 
-                                        return {
-                                          "order": question['order'],
-                                          "errorTypes": question['errorTypes'],
-                                          "content": question['content'],
-                                          "correctAnswer": question['answer'],
-                                          "isCorrect": (selectedChoice != null && selectedChoice['isCorrect'] == true) 
-                                              ? true 
-                                              : false,
-                                        };
-                                      })
-                                      .toList(),
-                                },
-                              );
-                            } else {
-                              await authService.clearAuth();
-                              throw UnauthorizedException();
-                            }
-                          }
-
-                          final responseData = jsonDecode(response.body);
-                          if (responseData['code'] != 1000) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("Không thể lưu kết quả quiz"),
-                              ),
+                                      return {
+                                        "order": question['order'],
+                                        "errorTypes": question['errorTypes'],
+                                        "content": question['content'],
+                                        "correctAnswer": question['answer'],
+                                        "isCorrect": (selectedChoice != null && selectedChoice['isCorrect'] == true) 
+                                            ? true 
+                                            : false,
+                                      };
+                                    })
+                                    .toList(),
+                              },
                             );
-                          }
 
-                          _submitQuiz(questions, responseData);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding:
-                              EdgeInsets.symmetric(
-                            vertical: 16,
+                            if (response.statusCode == 401) {
+                              var refreshResponse = await ApiService.post(
+                                '/identity/auth/refresh',
+                                body: {'token': authService.accessToken},
+                              );
+
+                              var refreshData = jsonDecode(refreshResponse.body);
+                              if (refreshData['code'] == 1000) {
+                                final newToken = refreshData['result']['token'];
+                                await authService.setAuth(newToken);
+
+                                response = await ApiService.post(
+                                  "/identity/learning-support/quiz",
+                                  token: authService.accessToken,
+                                  body: {
+                                    "studentReviewErrors": skills
+                                        .map((skill) => skill['errorType'])
+                                        .toList(),
+                                    "quizQuestions": questions
+                                        .map((question) { 
+                                          final int questionOrder = question['order'];
+                                          final List choices = question['choices'];
+                                          final selectedChoiceOrder =
+                                              selectedAnswers[questionOrder];
+
+                                          Map<String, dynamic>? selectedChoice;
+
+                                          try {
+                                            selectedChoice = choices.firstWhere(
+                                              (choice) => choice['order'] == selectedChoiceOrder,
+                                            );
+                                          } catch (_) {
+                                            selectedChoice = null;
+                                          }
+
+                                          return {
+                                            "order": question['order'],
+                                            "errorTypes": question['errorTypes'],
+                                            "content": question['content'],
+                                            "correctAnswer": question['answer'],
+                                            "isCorrect": (selectedChoice != null && selectedChoice['isCorrect'] == true) 
+                                                ? true 
+                                                : false,
+                                          };
+                                        })
+                                        .toList(),
+                                  },
+                                );
+                              } else {
+                                await authService.clearAuth();
+                                throw UnauthorizedException();
+                              }
+                            }
+
+                            final responseData = jsonDecode(response.body);
+                            if (responseData['code'] != 1000) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("Không thể lưu kết quả quiz"),
+                                ),
+                              );
+                            }
+
+                            _submitQuiz(questions, responseData);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding:
+                                EdgeInsets.symmetric(
+                              vertical: 16,
+                            ),
+                            backgroundColor:
+                                Color(0xFF1E40AF),
+                            foregroundColor:
+                                Colors.white,
+                            minimumSize: Size(150, 45),
                           ),
-                          backgroundColor:
-                              Color(0xFF1E40AF),
-                          foregroundColor:
-                              Colors.white,
-                        ),
-                        child: Text(
-                          'Nộp bài',
-                          style: TextStyle(
-                            fontSize: 16,
+                          child: Text(
+                            'Nộp bài',
+                            style: TextStyle(
+                              fontSize: 16,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
+                    ),
 
                     if (submitted)
                       Container(

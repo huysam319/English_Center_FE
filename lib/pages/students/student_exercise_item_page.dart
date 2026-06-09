@@ -116,7 +116,7 @@ class _StudentExerciseItemPageState extends State<StudentExerciseItemPage> {
               child: Container(
                 color: Colors.white,
                 child: ListView(
-                  padding: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(30),
                   children: [
                     Text('${exerciseData['title'] ?? ""}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
 

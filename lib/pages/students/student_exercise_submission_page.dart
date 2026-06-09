@@ -183,16 +183,6 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                 Row(
                   children: [
                     Expanded(
-                      // child: isTimer
-                      //   ? Row(
-                      //       mainAxisAlignment: MainAxisAlignment.center,
-                      //       children: [
-                      //         Icon(Icons.access_time_outlined),
-                      //         SizedBox(width: 5),
-                      //         CountdownTimer(key: _timerKey, seconds: 3600,),
-                      //       ],
-                      //     )
-                      //   : Container(),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -200,8 +190,7 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                           SizedBox(width: 5),
                           CountdownTimer(key: _timerKey, seconds: 3600,),
                         ],
-                      )
-                      // child: Container(),
+                      ),
                     ),
 
                     FutureBuilder<Map<String, dynamic>>(
@@ -302,22 +291,31 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                               );
                             },
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(
-                                Color(0xFF1E40AF),
-                              ),
-                              foregroundColor: WidgetStateProperty.all(Colors.white),
-                              overlayColor: WidgetStateProperty.all(
-                                Colors.transparent,
-                              ),
-                              minimumSize: WidgetStateProperty.all(Size(100, 40)),
-                              elevation: WidgetStateProperty.all(0),
-                              shape: WidgetStateProperty.all(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
+                              animationDuration: const Duration(milliseconds: 180),
+                              backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                if (states.contains(WidgetState.disabled)) return Colors.grey.shade300;
+                                return const Color(0xFF1E40AF);
+                              }),
+                              foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
+                              overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                if (states.contains(WidgetState.pressed)) return const Color(0xFF1E40AF).withOpacity(0.12);
+                                if (states.contains(WidgetState.hovered)) return const Color(0xFF1E40AF).withOpacity(0.08);
+                                return null;
+                              }),
+                              elevation: WidgetStateProperty.resolveWith<double>((states) {
+                                if (states.contains(WidgetState.pressed)) return 2;
+                                if (states.contains(WidgetState.hovered)) return 6;
+                                return 0;
+                              }),
+                              shadowColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) return const Color(0xFF1E40AF).withOpacity(0.22);
+                                return Colors.transparent;
+                              }),
+                              minimumSize: WidgetStateProperty.all(const Size(110, 44)),
+                              shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                              mouseCursor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? SystemMouseCursors.forbidden : SystemMouseCursors.click),
                             ),
-                            child: Text('Nộp bài'),
+                            child: Text('Nộp bài', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w200)),
                           );
                         }
                         else {
@@ -326,7 +324,7 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                       },
                     ),
                     
-                    SizedBox(width: 5),
+                    SizedBox(width: 20),
                   ],
                 ),
                     
@@ -367,37 +365,43 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                                   ),
                                   SizedBox(height: 10,),
 
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      border: Border.all(
-                                        color: Colors.black,
-                                        width: 1,
+                                  Padding(
+                                    padding: EdgeInsetsGeometry.symmetric(horizontal: 8),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        border: Border.all(
+                                          color: Colors.black,
+                                          width: 1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: QuillEditor(
-                                      controller: answerModels.firstWhere((model) => model.partNumber == activeSection).answerController,
-                                      scrollController: ScrollController(),
-                                      focusNode: FocusNode(),
-                                      config: QuillEditorConfig(
-                                        padding: EdgeInsets.all(10),
-                                        autoFocus: false,
-                                        expands: false,
-                                        placeholder: 'Add your answer here...',
+                                      child: QuillEditor(
+                                        controller: answerModels.firstWhere((model) => model.partNumber == activeSection).answerController,
+                                        scrollController: ScrollController(),
+                                        focusNode: FocusNode(),
+                                        config: QuillEditorConfig(
+                                          padding: EdgeInsets.all(10),
+                                          autoFocus: false,
+                                          expands: false,
+                                          placeholder: 'Add your answer here...',
+                                        ),
                                       ),
                                     ),
                                   ),
                                   SizedBox(height: 5,),
-                                  ValueListenableBuilder<int>(
-                                    valueListenable: answerModels.firstWhere((model) => model.partNumber == activeSection)
-                                        .wordCountNotifier,
-                                    builder: (context, value, child) {
-                                      return Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Text('Word count: $value',),
-                                      );
-                                    },
+                                  Padding(
+                                    padding: EdgeInsetsGeometry.symmetric(horizontal: 8),
+                                    child:ValueListenableBuilder<int>(
+                                      valueListenable: answerModels.firstWhere((model) => model.partNumber == activeSection)
+                                          .wordCountNotifier,
+                                      builder: (context, value, child) {
+                                        return Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Text('Word count: $value',),
+                                        );
+                                      },
+                                    ),
                                   ),
                                 ],
                               ),
@@ -413,23 +417,26 @@ class _StudentExerciseSubmissionPageState extends State<StudentExerciseSubmissio
                                   final result = snapshot.data!['result'];
                                   final totalQuestions = result['totalQuestions'];
 
-                                  return Row(
-                                    children: [
-                                      for (int i = 1; i <= totalQuestions; i++)
-                                        Expanded(
-                                          child: SectionNavbar(
-                                            isActive: activeSection == i,
-                                            label: "Task", 
-                                            number: i,
-                                            onChanged: () {
-                                              setState(() {
-                                                activeSection = i;
-                                                _partFuture = _loadPartInfo(widget.exerciseId, activeSection);
-                                              });
-                                            },
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 20),
+                                    child: Row(
+                                      children: [
+                                        for (int i = 1; i <= totalQuestions; i++)
+                                          Expanded(
+                                            child: SectionNavbar(
+                                              isActive: activeSection == i,
+                                              label: "Task", 
+                                              number: i,
+                                              onChanged: () {
+                                                setState(() {
+                                                  activeSection = i;
+                                                  _partFuture = _loadPartInfo(widget.exerciseId, activeSection);
+                                                });
+                                              },
+                                            ),
                                           ),
-                                        ),
-                                    ],
+                                      ],
+                                    ),
                                   );
                                 }
                                 else {

@@ -58,7 +58,7 @@ class _LearningSupportReviewPageState extends State<LearningSupportReviewPage> {
   Widget build(BuildContext context) {
     return Title(
       color: Colors.black,
-      title: "Hỗ trợ học tập",
+      title: "Hỗ trợ ôn tập lỗi sai",
       child: SiteLayout(
         menuNo: 9,
         content: Container(
@@ -94,10 +94,11 @@ class _LearningSupportReviewPageState extends State<LearningSupportReviewPage> {
                   padding: const EdgeInsets.all(20),
                   children: [
                     Text(
-                      "Nội dung ôn tập",
+                      "Nội dung ôn tập lỗi sai",
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1E40AF),
                       ),
                     ),
 
@@ -151,36 +152,59 @@ class _LearningSupportReviewPageState extends State<LearningSupportReviewPage> {
 
                         SizedBox(height: 10),
 
-                        ...(reviewContent[skill['errorType']]['results'] as List<dynamic>).map((result) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "- ${result['title']}",
-                                style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 4),
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    await launchUrl(
-                                      Uri.parse(result['url'] as String),
-                                      mode: LaunchMode.externalApplication,
-                                    );
-                                  },
-                                  child: Text(
-                                    result['url'] ?? "",
-                                    style: TextStyle(
-                                      color: Colors.blue,
-                                      decoration: TextDecoration.underline,
-                                    ),
+                        if ((reviewContent[skill['errorType']]['results'] as List<dynamic>).isNotEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Nguồn tham khảo',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 12),
+                                ...(reviewContent[skill['errorType']]['results'] as List<dynamic>).map((result) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "- ${result['title']}",
+                                        style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 4),
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            await launchUrl(
+                                              Uri.parse(result['url'] as String),
+                                              mode: LaunchMode.externalApplication,
+                                            );
+                                          },
+                                          child: Text(
+                                            result['url'] ?? "",
+                                            style: TextStyle(
+                                              color: Colors.blue,
+                                              decoration: TextDecoration.underline,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )),
+                              ],
+                            ),
                           ),
-                        )),
 
                         SizedBox(height: 30),
                       ],

@@ -139,7 +139,7 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
   Widget _buildClassInfo(Map<String, dynamic> classInfo) {
     Widget row(String label, Object? value) {
       return Padding(
-        padding: EdgeInsets.only(bottom: 8),
+        padding: EdgeInsets.only(bottom: 2),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -158,12 +158,17 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        row('Tên lớp', classInfo['name']),
+        Text(
+          'Thông tin lớp học',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+        SizedBox(height: 8),
+        // row('Tên lớp', classInfo['name']),
         row('Giáo viên', classInfo['teacherName']),
         row('Ngày bắt đầu', classInfo['startDate']),
         row('Ngày kết thúc', classInfo['endDate']),
-        SizedBox(height: 8),
-        Text('Buổi học', style: TextStyle(fontWeight: FontWeight.w700)),
+        SizedBox(height: 16),
+        Text('Buổi học', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         SizedBox(height: 8),
         if (sessions.isEmpty)
           Text('Chưa có buổi học nào')
@@ -235,7 +240,7 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
           'Lịch sử điểm danh',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
-        SizedBox(height: 10),
+        SizedBox(height: 8),
         if (history.isEmpty)
           Container(
             width: double.infinity,
@@ -328,9 +333,9 @@ class _StudentClassItemPageState extends State<StudentClassItemPage> {
                       Center(child: Text('Lỗi tải thông tin lớp học'))
                     else ...[
                       _buildClassInfo(classInfo),
-                      SizedBox(height: 24),
+                      SizedBox(height: 16),
                       _buildAttendanceHistory(attendanceHistory),
-                      SizedBox(height: 24),
+                      SizedBox(height: 16),
                       Row(
                         children: [
                           Text(
