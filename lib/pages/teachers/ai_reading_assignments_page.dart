@@ -1274,8 +1274,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
   }
 
   Future<void> _gradeAssignment(String assignmentId) async {
-    if (_gradingAssignmentIds.contains(assignmentId) ||
-        _hasGradingSubmission(assignmentId)) {
+    if (_gradingAssignmentIds.contains(assignmentId)) {
       return;
     }
     setState(() => _gradingAssignmentIds.add(assignmentId));
@@ -1649,8 +1648,8 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
   Widget _buildAssignmentTile(Map<String, dynamic> assignment) {
     final id = assignment['id'].toString();
     final locked = assignment['locked'] == true;
-    final grading =
-        _gradingAssignmentIds.contains(id) || _hasGradingSubmission(id);
+    final hasGradingSubmission = _hasGradingSubmission(id);
+    final grading = _gradingAssignmentIds.contains(id);
     final submissions = _submissionsByAssignmentId[id];
     return Container(
       margin: EdgeInsets.only(bottom: 10),
@@ -1713,7 +1712,13 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Icon(Icons.auto_awesome_outlined),
-                label: Text(grading ? 'Đang chấm' : 'Chấm AI'),
+                label: Text(
+                  grading
+                      ? 'Đang chấm'
+                      : hasGradingSubmission
+                      ? 'Chấm lại AI'
+                      : 'Chấm AI',
+                ),
               ),
             ],
           ),
