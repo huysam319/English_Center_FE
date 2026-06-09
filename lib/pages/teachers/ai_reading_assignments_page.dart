@@ -1808,7 +1808,7 @@ class _AiReadingAssignmentsPageState extends State<AiReadingAssignmentsPage> {
     return Wrap(
       spacing: 6,
       runSpacing: 6,
-      children: resources.take(3).map((resource) {
+      children: resources.map((resource) {
         final title = resource['title']?.toString() ?? 'Tài liệu ôn tập';
         final url = resource['url']?.toString() ?? '';
         final source = resource['source']?.toString() ?? '';
